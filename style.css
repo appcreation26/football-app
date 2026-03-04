@@ -61,3 +61,34 @@ button:hover {
   font-size: 14px;
   color: #aaa;
 }
+.match-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 15px 0;
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 35%;
+}
+
+.logo {
+  width: 28px;
+  height: 28px;
+}
+
+.score {
+  font-size: 24px;
+  font-weight: bold;
+  width: 20%;
+  text-align: center;
+}
+
+.minute {
+  font-size: 13px;
+  color: #aaa;
+  margin-top: 5px;
+}
