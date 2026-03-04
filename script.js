@@ -54,3 +54,4 @@ for (const liga in ligas) {
     container.appendChild(div);
   });
 }
+}
