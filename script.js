@@ -10,17 +10,18 @@ async function mostrarJogos() {
     return;
   }
 
-  dados.response.forEach(jogo => {
-    const div = document.createElement("div");
+div.classList.add("game-card");
 
-    div.innerHTML = `
-      <h3>${jogo.league.name}</h3>
-      <p>${jogo.teams.home.name} vs ${jogo.teams.away.name}</p>
-      <p><strong>${jogo.goals.home} - ${jogo.goals.away}</strong></p>
-      <p>Minuto: ${jogo.fixture.status.elapsed || 0}'</p>
-      <hr>
-    `;
-
-    container.appendChild(div);
-  });
+div.innerHTML = `
+  <div class="league">${jogo.league.name}</div>
+  <div class="teams">
+    ${jogo.teams.home.name} vs ${jogo.teams.away.name}
+  </div>
+  <div class="score">
+    ${jogo.goals.home} - ${jogo.goals.away}
+  </div>
+  <div class="minute">
+    Minuto: ${jogo.fixture.status.elapsed || 0}'
+  </div>
+`;
 }
