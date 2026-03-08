@@ -48,12 +48,12 @@ container.appendChild(leagueHeader);
         </div>
 
         <div class="team team-right">
-  <span>${jogo.teams.away.name}</span>
-  <img src="${jogo.teams.away.logo}" class="logo">
-</div>
-      </div>
+       <span>${jogo.teams.away.name}</span>
+       <img src="${jogo.teams.away.logo}" class="logo">
+       </div>
+       </div>
 
-      <div class="minute">
+       <div class="minute">
         ${jogo.fixture.status.short} • ${jogo.fixture.status.elapsed || 0}'
       </div>
     `;
