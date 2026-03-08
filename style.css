@@ -81,11 +81,11 @@ button:hover {
   height: 28px;
 }
 
-.score {
-  font-size: 24px;
-  font-weight: bold;
-  width: 20%;
-  text-align: center;
+.score{
+  font-size:24px;
+  font-weight:bold;
+  min-width:80px;
+  text-align:center;
 }
 
 .minute {
@@ -112,4 +112,8 @@ button:hover {
 .team-right{
   justify-content:flex-end;
   text-align:right;
+  flex:1;
+}
+.team span{
+  flex:1;
 }
