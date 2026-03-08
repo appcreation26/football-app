@@ -20,10 +20,17 @@ dados.response.forEach(jogo => {
 });
 
 for (const liga in ligas) {
-  const leagueTitle = document.createElement("h2");
-  leagueTitle.textContent = liga;
-  leagueTitle.style.marginTop = "30px";
-  container.appendChild(leagueTitle);
+const leagueHeader = document.createElement("div");
+leagueHeader.classList.add("league-header");
+
+const leagueLogo = ligas[liga][0].league.logo;
+
+leagueHeader.innerHTML = `
+  <img src="${leagueLogo}" class="league-logo">
+  <span>${liga}</span>
+`;
+
+container.appendChild(leagueHeader);
 
   ligas[liga].forEach(jogo => {
     const div = document.createElement("div");
