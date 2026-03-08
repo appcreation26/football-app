@@ -47,10 +47,10 @@ container.appendChild(leagueHeader);
           ${jogo.goals.home} - ${jogo.goals.away}
         </div>
 
-        <div class="team">
-          <span>${jogo.teams.away.name}</span>
-          <img src="${jogo.teams.away.logo}" class="logo">
-        </div>
+        <div class="team team-right">
+  <span>${jogo.teams.away.name}</span>
+  <img src="${jogo.teams.away.logo}" class="logo">
+</div>
       </div>
 
       <div class="minute">

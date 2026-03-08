@@ -68,11 +68,11 @@ button:hover {
   margin: 15px 0;
 }
 
-.team {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 35%;
+.team{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:40%;
 }
 
 .logo {
