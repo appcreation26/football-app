@@ -40,59 +40,8 @@ button:hover {
   box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
-.league {
-  font-size: 14px;
-  color: #00ff88;
-  margin-bottom: 10px;
-}
+/* League title */
 
-.teams {
-  font-size: 18px;
-  margin: 5px 0;
-}
-
-.score {
-  font-size: 22px;
-  font-weight: bold;
-  margin: 8px 0;
-}
-
-.minute {
-  font-size: 14px;
-  color: #aaa;
-}
-.match-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  width:100%;
-  margin:15px 0;
-}
-
-.team{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex:1;
-}
-
-.logo {
-  width: 28px;
-  height: 28px;
-}
-
-.score{
-  font-size:24px;
-  font-weight:bold;
-  min-width:80px;
-  text-align:center;
-}
-
-.minute {
-  font-size: 13px;
-  color: #aaa;
-  margin-top: 5px;
-}
 .league-header{
   display:flex;
   align-items:center;
@@ -109,11 +58,53 @@ button:hover {
   height:22px;
 }
 
+/* MATCH ROW (GRID PROFESSIONAL LAYOUT) */
+
+.match-row{
+  display:grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items:center;
+  gap:10px;
+  margin:15px 0;
+}
+
+/* TEAMS */
+
+.team{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.team-left{
+  justify-content:flex-start;
+}
+
 .team-right{
   justify-content:flex-end;
   text-align:right;
-  flex:1;
 }
-.team span{
-  flex:1;
+
+/* TEAM LOGOS */
+
+.logo {
+  width: 28px;
+  height: 28px;
+}
+
+/* SCORE */
+
+.score{
+  font-size:24px;
+  font-weight:bold;
+  text-align:center;
+  min-width:70px;
+}
+
+/* MINUTE */
+
+.minute {
+  font-size: 13px;
+  color: #aaa;
+  margin-top: 5px;
 }
