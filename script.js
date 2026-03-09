@@ -20,7 +20,7 @@ async function mostrarJogos() {
 
     if (!dados.response || dados.response.length === 0) {
       todosOsJogos = [];
-      gamesContainer.innerHTML = `<p class="muted">Sem jogos ao vivo neste momento.</p>`;
+      gamesContainer.innerHTML = `<p class="muted">Sem jogos neste dia.</p>`;
       leagueList.innerHTML = `<p class="muted">Sem ligas disponíveis.</p>`;
       return;
     }
@@ -98,7 +98,43 @@ function renderJogos() {
     return;
   }
 
-  jogosFiltrados.forEach((jogo) => {
+  const jogosLive = jogosFiltrados.filter((jogo) =>
+    ["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(jogo.fixture.status.short)
+  );
+
+  const jogosPorComecar = jogosFiltrados.filter((jogo) =>
+    ["NS", "TBD"].includes(jogo.fixture.status.short)
+  );
+
+  const jogosTerminados = jogosFiltrados.filter((jogo) =>
+    ["FT", "AET", "PEN"].includes(jogo.fixture.status.short)
+  );
+
+  adicionarSecaoJogos("🔴 Live", jogosLive);
+  adicionarSecaoJogos("🟡 A começar", jogosPorComecar);
+  adicionarSecaoJogos("⚫ Terminados", jogosTerminados);
+}
+
+function adicionarSecaoJogos(titulo, jogos) {
+  const section = document.createElement("div");
+  section.className = "games-section";
+
+  const heading = document.createElement("h3");
+  heading.className = "section-title";
+  heading.textContent = titulo;
+
+  section.appendChild(heading);
+
+  if (jogos.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "muted";
+    empty.textContent = "Sem jogos nesta secção.";
+    section.appendChild(empty);
+    gamesContainer.appendChild(section);
+    return;
+  }
+
+  jogos.forEach((jogo) => {
     const card = document.createElement("div");
     card.className = "game-card";
 
@@ -108,6 +144,15 @@ function renderJogos() {
 
     const statusCurto = jogo.fixture.status.short || "";
     const minuto = jogo.fixture.status.elapsed || 0;
+
+    let infoCentro = "";
+    if (["NS", "TBD"].includes(statusCurto)) {
+      infoCentro = formatarHora(jogo.fixture.date);
+    } else if (["FT", "AET", "PEN"].includes(statusCurto)) {
+      infoCentro = statusCurto;
+    } else {
+      infoCentro = `${statusCurto} • ${minuto}'`;
+    }
 
     card.innerHTML = `
       <div class="game-top">
@@ -125,8 +170,8 @@ function renderJogos() {
         </div>
 
         <div class="score-box">
-          <div class="score">${jogo.goals.home} - ${jogo.goals.away}</div>
-          <div class="minute">${statusCurto} • ${minuto}'</div>
+          <div class="score">${jogo.goals.home ?? 0} - ${jogo.goals.away ?? 0}</div>
+          <div class="minute">${infoCentro}</div>
         </div>
 
         <div class="team team-right">
@@ -142,8 +187,10 @@ function renderJogos() {
       await renderDetalhes(jogo);
     });
 
-    gamesContainer.appendChild(card);
+    section.appendChild(card);
   });
+
+  gamesContainer.appendChild(section);
 }
 
 async function renderDetalhes(jogo) {
@@ -223,7 +270,7 @@ async function renderDetalhes(jogo) {
           <div>${jogo.teams.home.name}</div>
         </div>
 
-        <div class="details-score">${jogo.goals.home} - ${jogo.goals.away}</div>
+        <div class="details-score">${jogo.goals.home ?? 0} - ${jogo.goals.away ?? 0}</div>
 
         <div class="details-team">
           <img src="${jogo.teams.away.logo}" alt="${jogo.teams.away.name}">
@@ -238,6 +285,7 @@ async function renderDetalhes(jogo) {
         <div><span class="status-live">${statusCurto}</span> • ${statusLongo}</div>
         <div>Minuto: ${minuto}'</div>
         <div>Liga: ${jogo.league.name}</div>
+        <div>Data: ${formatarDataHora(jogo.fixture.date)}</div>
       </div>
     </div>
 
@@ -382,4 +430,17 @@ function renderStatRow(label, homeValue, awayValue) {
       <div class="stat-away">${awayValue}</div>
     </div>
   `;
+}
+
+function formatarHora(dataIso) {
+  const data = new Date(dataIso);
+  return data.toLocaleTimeString("pt-PT", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatarDataHora(dataIso) {
+  const data = new Date(dataIso);
+  return data.toLocaleString("pt-PT");
 }
