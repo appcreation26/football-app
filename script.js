@@ -136,22 +136,48 @@ function renderJogos() {
       </div>
     `;
 
-    card.addEventListener("click", () => {
+    card.addEventListener("click", async () => {
       jogoSelecionadoId = jogo.fixture.id;
       renderJogos();
-      renderDetalhes(jogo);
+      await renderDetalhes(jogo);
     });
 
     gamesContainer.appendChild(card);
   });
 }
 
-function renderDetalhes(jogo) {
+async function renderDetalhes(jogo) {
   const statusCurto = jogo.fixture.status.short || "";
   const statusLongo = jogo.fixture.status.long || "";
   const minuto = jogo.fixture.status.elapsed || 0;
   const estadio = jogo.fixture.venue?.name || "Sem estádio disponível";
   const cidade = jogo.fixture.venue?.city || "Sem cidade disponível";
+
+  matchDetails.innerHTML = `<p class="muted">🔄 A carregar detalhes do jogo...</p>`;
+
+  let eventos = [];
+
+  try {
+    const response = await fetch(`/api/fixture-details?id=${jogo.fixture.id}`);
+    const data = await response.json();
+    eventos = data.response || [];
+  } catch (error) {
+    console.error("Erro ao carregar eventos:", error);
+  }
+
+  const golos = eventos.filter(
+    (evento) => evento.type === "Goal"
+  );
+
+  const amarelos = eventos.filter(
+    (evento) => evento.type === "Card" && evento.detail === "Yellow Card"
+  );
+
+  const vermelhos = eventos.filter(
+    (evento) =>
+      evento.type === "Card" &&
+      (evento.detail === "Red Card" || evento.detail === "Second Yellow card")
+  );
 
   matchDetails.innerHTML = `
     <div class="details-card">
@@ -190,13 +216,50 @@ function renderDetalhes(jogo) {
     </div>
 
     <div class="details-card">
-      <div class="details-title">Próxima fase</div>
+      <div class="details-title">Golos</div>
       <div class="details-meta">
-        <div>Na próxima etapa vamos mostrar aqui:</div>
-        <div>• eventos do jogo</div>
-        <div>• golos e cartões</div>
-        <div>• estatísticas</div>
-        <div>• últimos resultados</div>
+        ${
+          golos.length
+            ? golos
+                .map(
+                  (g) =>
+                    `<div>${g.time.elapsed}' • ${g.team.name} • ${g.player.name || "Sem nome"}</div>`
+                )
+                .join("")
+            : "<div>Sem golos registados.</div>"
+        }
+      </div>
+    </div>
+
+    <div class="details-card">
+      <div class="details-title">Cartões amarelos</div>
+      <div class="details-meta">
+        ${
+          amarelos.length
+            ? amarelos
+                .map(
+                  (c) =>
+                    `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player.name || "Sem nome"}</div>`
+                )
+                .join("")
+            : "<div>Sem amarelos registados.</div>"
+        }
+      </div>
+    </div>
+
+    <div class="details-card">
+      <div class="details-title">Cartões vermelhos</div>
+      <div class="details-meta">
+        ${
+          vermelhos.length
+            ? vermelhos
+                .map(
+                  (c) =>
+                    `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player.name || "Sem nome"}</div>`
+                )
+                .join("")
+            : "<div>Sem vermelhos registados.</div>"
+        }
       </div>
     </div>
   `;
