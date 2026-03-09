@@ -156,18 +156,24 @@ async function renderDetalhes(jogo) {
   matchDetails.innerHTML = `<p class="muted">🔄 A carregar detalhes do jogo...</p>`;
 
   let eventos = [];
+  let estatisticas = [];
 
   try {
-    const response = await fetch(`/api/fixture-details?id=${jogo.fixture.id}`);
-    const data = await response.json();
-    eventos = data.response || [];
+    const [eventosRes, statsRes] = await Promise.all([
+      fetch(`/api/fixture-details?id=${jogo.fixture.id}`),
+      fetch(`/api/fixture-stats?id=${jogo.fixture.id}`),
+    ]);
+
+    const eventosData = await eventosRes.json();
+    const statsData = await statsRes.json();
+
+    eventos = eventosData.response || [];
+    estatisticas = statsData.response || [];
   } catch (error) {
-    console.error("Erro ao carregar eventos:", error);
+    console.error("Erro ao carregar detalhes:", error);
   }
 
-  const golos = eventos.filter(
-    (evento) => evento.type === "Goal"
-  );
+  const golos = eventos.filter((evento) => evento.type === "Goal");
 
   const amarelos = eventos.filter(
     (evento) => evento.type === "Card" && evento.detail === "Yellow Card"
@@ -177,6 +183,34 @@ async function renderDetalhes(jogo) {
     (evento) =>
       evento.type === "Card" &&
       (evento.detail === "Red Card" || evento.detail === "Second Yellow card")
+  );
+
+  const homeStats = estatisticas.find(
+    (item) => item.team && item.team.id === jogo.teams.home.id
+  );
+  const awayStats = estatisticas.find(
+    (item) => item.team && item.team.id === jogo.teams.away.id
+  );
+
+  const posseCasa = getStatValue(homeStats, "Ball Possession");
+  const posseFora = getStatValue(awayStats, "Ball Possession");
+
+  const rematesBalizaCasa = getStatValue(homeStats, "Shots on Goal");
+  const rematesBalizaFora = getStatValue(awayStats, "Shots on Goal");
+
+  const cantosCasa = getStatValue(homeStats, "Corner Kicks");
+  const cantosFora = getStatValue(awayStats, "Corner Kicks");
+
+  const faltasCasa = getStatValue(homeStats, "Fouls");
+  const faltasFora = getStatValue(awayStats, "Fouls");
+
+  const dominio = calcularDominio(
+    posseCasa,
+    posseFora,
+    rematesBalizaCasa,
+    rematesBalizaFora,
+    cantosCasa,
+    cantosFora
   );
 
   matchDetails.innerHTML = `
@@ -216,6 +250,37 @@ async function renderDetalhes(jogo) {
     </div>
 
     <div class="details-card">
+      <div class="details-title">Domínio estimado</div>
+      <div class="details-meta">
+        <div class="dominance-labels">
+          <span>${jogo.teams.home.name}</span>
+          <span>${jogo.teams.away.name}</span>
+        </div>
+        <div class="dominance-bar">
+          <div class="dominance-home" style="width: ${dominio.home}%"></div>
+          <div class="dominance-away" style="width: ${dominio.away}%"></div>
+        </div>
+        <div class="dominance-values">
+          <span>${dominio.home}%</span>
+          <span>${dominio.away}%</span>
+        </div>
+        <div class="muted small-note">
+          Estimado com base em posse, remates à baliza e cantos.
+        </div>
+      </div>
+    </div>
+
+    <div class="details-card">
+      <div class="details-title">Estatísticas</div>
+      <div class="stats-table">
+        ${renderStatRow("Posse de bola", posseCasa, posseFora)}
+        ${renderStatRow("Remates à baliza", rematesBalizaCasa, rematesBalizaFora)}
+        ${renderStatRow("Cantos", cantosCasa, cantosFora)}
+        ${renderStatRow("Faltas", faltasCasa, faltasFora)}
+      </div>
+    </div>
+
+    <div class="details-card">
       <div class="details-title">Golos</div>
       <div class="details-meta">
         ${
@@ -223,7 +288,7 @@ async function renderDetalhes(jogo) {
             ? golos
                 .map(
                   (g) =>
-                    `<div>${g.time.elapsed}' • ${g.team.name} • ${g.player.name || "Sem nome"}</div>`
+                    `<div>${g.time.elapsed}' • ${g.team.name} • ${g.player?.name || "Sem nome"}</div>`
                 )
                 .join("")
             : "<div>Sem golos registados.</div>"
@@ -239,7 +304,7 @@ async function renderDetalhes(jogo) {
             ? amarelos
                 .map(
                   (c) =>
-                    `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player.name || "Sem nome"}</div>`
+                    `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`
                 )
                 .join("")
             : "<div>Sem amarelos registados.</div>"
@@ -255,12 +320,66 @@ async function renderDetalhes(jogo) {
             ? vermelhos
                 .map(
                   (c) =>
-                    `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player.name || "Sem nome"}</div>`
+                    `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`
                 )
                 .join("")
             : "<div>Sem vermelhos registados.</div>"
         }
       </div>
+    </div>
+  `;
+}
+
+function getStatValue(teamStats, statName) {
+  if (!teamStats || !teamStats.statistics) return 0;
+
+  const stat = teamStats.statistics.find((s) => s.type === statName);
+  if (!stat || stat.value === null || stat.value === undefined) return 0;
+
+  if (typeof stat.value === "string" && stat.value.includes("%")) {
+    return parseInt(stat.value.replace("%", ""), 10) || 0;
+  }
+
+  return Number(stat.value) || 0;
+}
+
+function calcularDominio(
+  posseCasa,
+  posseFora,
+  rematesCasa,
+  rematesFora,
+  cantosCasa,
+  cantosFora
+) {
+  const pesoPosseCasa = posseCasa * 1;
+  const pesoPosseFora = posseFora * 1;
+
+  const pesoRematesCasa = rematesCasa * 8;
+  const pesoRematesFora = rematesFora * 8;
+
+  const pesoCantosCasa = cantosCasa * 4;
+  const pesoCantosFora = cantosFora * 4;
+
+  const totalCasa = pesoPosseCasa + pesoRematesCasa + pesoCantosCasa;
+  const totalFora = pesoPosseFora + pesoRematesFora + pesoCantosFora;
+  const total = totalCasa + totalFora;
+
+  if (total === 0) {
+    return { home: 50, away: 50 };
+  }
+
+  return {
+    home: Math.round((totalCasa / total) * 100),
+    away: Math.round((totalFora / total) * 100),
+  };
+}
+
+function renderStatRow(label, homeValue, awayValue) {
+  return `
+    <div class="stat-row">
+      <div class="stat-home">${homeValue}</div>
+      <div class="stat-label">${label}</div>
+      <div class="stat-away">${awayValue}</div>
     </div>
   `;
 }
