@@ -1,18 +1,60 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Football Live App</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">⚽ Sports Center</div>
 
-  <div class="app">
-    <h1>⚽ Football Live Scores</h1>
-    <button onclick="mostrarJogos()">Ver Jogos</button>
+      <div class="top-controls">
+        <select id="sportSelect">
+          <option value="football">Football</option>
+          <option value="basketball" disabled>Basketball (em breve)</option>
+        </select>
 
-    <div id="games"></div>
+        <select id="viewSelect">
+          <option value="live">Jogos Live</option>
+          <option value="results" disabled>Resultados (em breve)</option>
+          <option value="stats" disabled>Estatísticas (em breve)</option>
+        </select>
+
+        <div class="date-nav">
+          <button id="prevDateBtn" disabled>◀</button>
+          <span id="currentDateLabel">Hoje</span>
+          <button id="nextDateBtn" disabled>▶</button>
+        </div>
+
+        <button id="loadBtn">Atualizar</button>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <aside class="sidebar-left">
+        <div class="panel-title">Ligas</div>
+        <div id="leagueList" class="league-list">
+          <p class="muted">Carrega em “Atualizar”.</p>
+        </div>
+      </aside>
+
+      <section class="center-column">
+        <div class="panel-title">Jogos</div>
+        <div id="games" class="games-list">
+          <p class="muted">Sem dados carregados.</p>
+        </div>
+      </section>
+
+      <aside class="sidebar-right">
+        <div class="panel-title">Detalhes do jogo</div>
+        <div id="matchDetails" class="match-details">
+          <p class="muted">Seleciona um jogo na coluna central.</p>
+        </div>
+      </aside>
+    </main>
   </div>
 
   <script src="script.js"></script>
