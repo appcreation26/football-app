@@ -34,6 +34,32 @@ const TOP_LEAGUES = [
   "PrvaLiga"
 ];
 
+const PRIORITY_COUNTRIES = [
+  "Portugal",
+  "Spain",
+  "England",
+  "France",
+  "Germany",
+  "Italy",
+  "Netherlands",
+  "Belgium",
+  "Scotland",
+  "Turkey",
+  "Greece",
+  "Austria",
+  "Switzerland",
+  "Denmark",
+  "Sweden",
+  "Norway",
+  "Czech-Republic",
+  "Serbia",
+  "Romania",
+  "Hungary",
+  "Bulgaria",
+  "Slovakia",
+  "Slovenia"
+];
+
 const gamesContainer = document.getElementById("games");
 const leagueList = document.getElementById("leagueList");
 const matchDetails = document.getElementById("matchDetails");
@@ -59,12 +85,11 @@ async function mostrarJogos() {
 
     todosOsJogos = dados.response;
 
-    renderLigas(todosOsJogos);
-
     if (!ligaSelecionada && todosOsJogos.length > 0) {
       ligaSelecionada = todosOsJogos[0].league.name;
     }
 
+    renderLigas(todosOsJogos);
     renderJogos();
   } catch (erro) {
     console.error("Erro:", erro);
@@ -74,38 +99,53 @@ async function mostrarJogos() {
 }
 
 function renderLigas(jogos) {
-  const mapaLigas = {};
+  const mapaPaises = {};
 
   jogos.forEach((jogo) => {
-    const country = jogo.league.country || "Outros";
+    const country = (jogo.league.country || "").trim();
+    const leagueName = (jogo.league.name || "").trim();
 
-    if (!mapaLigas[country]) {
-      mapaLigas[country] = {
+    // ignora entradas estranhas/vazias
+    if (!country || !leagueName) return;
+
+    if (!mapaPaises[country]) {
+      mapaPaises[country] = {
         nome: country,
-        flag: jogo.league.flag,
+        flag: jogo.league.flag || "",
         ligas: {}
       };
     }
 
-    if (!mapaLigas[country].ligas[jogo.league.name]) {
-      mapaLigas[country].ligas[jogo.league.name] = {
-        nome: jogo.league.name,
-        logo: jogo.league.logo
+    if (!mapaPaises[country].ligas[leagueName]) {
+      mapaPaises[country].ligas[leagueName] = {
+        nome: leagueName,
+        logo: jogo.league.logo || ""
       };
     }
   });
 
-  const paises = Object.values(mapaLigas).sort((a, b) => {
-    const aTemTop = Object.values(a.ligas).some((liga) => TOP_LEAGUES.includes(liga.nome));
-    const bTemTop = Object.values(b.ligas).some((liga) => TOP_LEAGUES.includes(liga.nome));
+  let paises = Object.values(mapaPaises);
 
-    if (aTemTop && !bTemTop) return -1;
-    if (!aTemTop && bTemTop) return 1;
+  // remove países sem ligas
+  paises = paises.filter((pais) => Object.keys(pais.ligas).length > 0);
+
+  // ordenação: primeiro países prioritários, depois alfabético
+  paises.sort((a, b) => {
+    const aPriority = PRIORITY_COUNTRIES.includes(a.nome);
+    const bPriority = PRIORITY_COUNTRIES.includes(b.nome);
+
+    if (aPriority && !bPriority) return -1;
+    if (!aPriority && bPriority) return 1;
 
     return a.nome.localeCompare(b.nome);
   });
 
   leagueList.innerHTML = "";
+
+  if (paises.length === 0) {
+    leagueList.innerHTML = `<p class="muted">Sem países disponíveis.</p>`;
+    return;
+  }
 
   paises.forEach((pais) => {
     const ligasArray = Object.values(pais.ligas).sort((a, b) => {
@@ -129,11 +169,14 @@ function renderLigas(jogos) {
         ${pais.flag ? `<img src="${pais.flag}" class="country-flag" alt="${pais.nome}">` : ""}
         <span class="country-name">${pais.nome}</span>
       </div>
-      <span class="country-arrow">▼</span>
+      <span class="country-arrow">▶</span>
     `;
 
     const countryLeagues = document.createElement("div");
     countryLeagues.className = "country-leagues";
+    countryLeagues.style.display = "none";
+
+    let paisTemLigaSelecionada = false;
 
     ligasArray.forEach((liga) => {
       const item = document.createElement("div");
@@ -141,10 +184,11 @@ function renderLigas(jogos) {
 
       if (ligaSelecionada === liga.nome) {
         item.classList.add("active");
+        paisTemLigaSelecionada = true;
       }
 
       item.innerHTML = `
-        <img src="${liga.logo}" alt="${liga.nome}">
+        ${liga.logo ? `<img src="${liga.logo}" alt="${liga.nome}">` : ""}
         <span>${liga.nome}</span>
       `;
 
@@ -159,6 +203,12 @@ function renderLigas(jogos) {
 
       countryLeagues.appendChild(item);
     });
+
+    // abre automaticamente o país da liga selecionada
+    if (paisTemLigaSelecionada) {
+      countryLeagues.style.display = "flex";
+      countryHeader.querySelector(".country-arrow").textContent = "▼";
+    }
 
     countryHeader.addEventListener("click", () => {
       const estaVisivel = countryLeagues.style.display !== "none";
