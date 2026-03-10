@@ -2,6 +2,37 @@ let todosOsJogos = [];
 let ligaSelecionada = null;
 let jogoSelecionadoId = null;
 
+const TOP_LEAGUES = [
+  "Primeira Liga",
+  "La Liga",
+  "La Liga 2",
+  "Premier League",
+  "Championship",
+  "League One",
+  "Ligue 1",
+  "Bundesliga",
+  "2. Bundesliga",
+  "Serie A",
+  "Eredivisie",
+  "Eerste Divisie",
+  "Pro League",
+  "Premiership",
+  "Süper Lig",
+  "1. Lig",
+  "Super League",
+  "Austrian Bundesliga",
+  "Challenge League",
+  "Superliga",
+  "Allsvenskan",
+  "Eliteserien",
+  "Czech Liga",
+  "Super Liga",
+  "Liga I",
+  "NB I",
+  "First League",
+  "PrvaLiga"
+];
+
 const gamesContainer = document.getElementById("games");
 const leagueList = document.getElementById("leagueList");
 const matchDetails = document.getElementById("matchDetails");
@@ -59,7 +90,28 @@ function renderLigas(jogos) {
     a.nome.localeCompare(b.nome)
   );
 
+  const ligasPrincipais = ligas.filter((liga) => TOP_LEAGUES.includes(liga.nome));
+  const outrasLigas = ligas.filter((liga) => !TOP_LEAGUES.includes(liga.nome));
+
   leagueList.innerHTML = "";
+
+  adicionarGrupoLigas("⭐ Ligas principais", ligasPrincipais);
+  adicionarGrupoLigas("🌍 Outras ligas", outrasLigas);
+}
+
+function adicionarGrupoLigas(titulo, ligas) {
+  const tituloGrupo = document.createElement("div");
+  tituloGrupo.className = "league-group-title";
+  tituloGrupo.textContent = titulo;
+  leagueList.appendChild(tituloGrupo);
+
+  if (ligas.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "muted";
+    empty.textContent = "Sem ligas nesta secção.";
+    leagueList.appendChild(empty);
+    return;
+  }
 
   ligas.forEach((liga) => {
     const item = document.createElement("div");
