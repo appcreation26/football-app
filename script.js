@@ -3,8 +3,35 @@ let ligaSelecionada = null;
 let jogoSelecionadoId = null;
 let tabSelecionada = "live";
 
-const TOP_LEAGUES = [
+const ALLOWED_COUNTRIES = [
+  "Portugal",
+  "Spain",
+  "England",
+  "France",
+  "Germany",
+  "Italy",
+  "Netherlands",
+  "Belgium",
+  "Scotland",
+  "Turkey",
+  "Greece",
+  "Austria",
+  "Switzerland",
+  "Denmark",
+  "Sweden",
+  "Norway",
+  "Czech-Republic",
+  "Serbia",
+  "Romania",
+  "Hungary",
+  "Bulgaria",
+  "Slovakia",
+  "Slovenia"
+];
+
+const ALLOWED_LEAGUES = [
   "Primeira Liga",
+  "Liga Portugal 2",
   "La Liga",
   "La Liga 2",
   "Premier League",
@@ -34,32 +61,6 @@ const TOP_LEAGUES = [
   "PrvaLiga"
 ];
 
-const PRIORITY_COUNTRIES = [
-  "Portugal",
-  "Spain",
-  "England",
-  "France",
-  "Germany",
-  "Italy",
-  "Netherlands",
-  "Belgium",
-  "Scotland",
-  "Turkey",
-  "Greece",
-  "Austria",
-  "Switzerland",
-  "Denmark",
-  "Sweden",
-  "Norway",
-  "Czech-Republic",
-  "Serbia",
-  "Romania",
-  "Hungary",
-  "Bulgaria",
-  "Slovakia",
-  "Slovenia"
-];
-
 const gamesContainer = document.getElementById("games");
 const leagueList = document.getElementById("leagueList");
 const matchDetails = document.getElementById("matchDetails");
@@ -83,9 +84,24 @@ async function mostrarJogos() {
       return;
     }
 
-    todosOsJogos = dados.response;
+    // FILTRO PRINCIPAL: só países e ligas que queremos
+    todosOsJogos = dados.response.filter((jogo) => {
+      const country = (jogo.league.country || "").trim();
+      const leagueName = (jogo.league.name || "").trim();
 
-    if (!ligaSelecionada && todosOsJogos.length > 0) {
+      return (
+        ALLOWED_COUNTRIES.includes(country) &&
+        ALLOWED_LEAGUES.includes(leagueName)
+      );
+    });
+
+    if (todosOsJogos.length === 0) {
+      gamesContainer.innerHTML = `<p class="muted">Nenhum jogo encontrado nas ligas escolhidas.</p>`;
+      leagueList.innerHTML = `<p class="muted">Sem ligas disponíveis.</p>`;
+      return;
+    }
+
+    if (!ligaSelecionada || !todosOsJogos.some(j => j.league.name === ligaSelecionada)) {
       ligaSelecionada = todosOsJogos[0].league.name;
     }
 
@@ -105,7 +121,6 @@ function renderLigas(jogos) {
     const country = (jogo.league.country || "").trim();
     const leagueName = (jogo.league.name || "").trim();
 
-    // ignora entradas estranhas/vazias
     if (!country || !leagueName) return;
 
     if (!mapaPaises[country]) {
@@ -124,20 +139,10 @@ function renderLigas(jogos) {
     }
   });
 
-  let paises = Object.values(mapaPaises);
-
-  // remove países sem ligas
-  paises = paises.filter((pais) => Object.keys(pais.ligas).length > 0);
-
-  // ordenação: primeiro países prioritários, depois alfabético
-  paises.sort((a, b) => {
-    const aPriority = PRIORITY_COUNTRIES.includes(a.nome);
-    const bPriority = PRIORITY_COUNTRIES.includes(b.nome);
-
-    if (aPriority && !bPriority) return -1;
-    if (!aPriority && bPriority) return 1;
-
-    return a.nome.localeCompare(b.nome);
+  const paises = Object.values(mapaPaises).sort((a, b) => {
+    const aIndex = ALLOWED_COUNTRIES.indexOf(a.nome);
+    const bIndex = ALLOWED_COUNTRIES.indexOf(b.nome);
+    return aIndex - bIndex;
   });
 
   leagueList.innerHTML = "";
@@ -149,13 +154,9 @@ function renderLigas(jogos) {
 
   paises.forEach((pais) => {
     const ligasArray = Object.values(pais.ligas).sort((a, b) => {
-      const aTop = TOP_LEAGUES.includes(a.nome);
-      const bTop = TOP_LEAGUES.includes(b.nome);
-
-      if (aTop && !bTop) return -1;
-      if (!aTop && bTop) return 1;
-
-      return a.nome.localeCompare(b.nome);
+      const aIndex = ALLOWED_LEAGUES.indexOf(a.nome);
+      const bIndex = ALLOWED_LEAGUES.indexOf(b.nome);
+      return aIndex - bIndex;
     });
 
     const countryGroup = document.createElement("div");
@@ -204,7 +205,6 @@ function renderLigas(jogos) {
       countryLeagues.appendChild(item);
     });
 
-    // abre automaticamente o país da liga selecionada
     if (paisTemLigaSelecionada) {
       countryLeagues.style.display = "flex";
       countryHeader.querySelector(".country-arrow").textContent = "▼";
@@ -375,11 +375,9 @@ async function renderDetalhes(jogo) {
   }
 
   const golos = eventos.filter((evento) => evento.type === "Goal");
-
   const amarelos = eventos.filter(
     (evento) => evento.type === "Card" && evento.detail === "Yellow Card"
   );
-
   const vermelhos = eventos.filter(
     (evento) =>
       evento.type === "Card" &&
@@ -395,13 +393,10 @@ async function renderDetalhes(jogo) {
 
   const posseCasa = getStatValue(homeStats, "Ball Possession");
   const posseFora = getStatValue(awayStats, "Ball Possession");
-
   const rematesBalizaCasa = getStatValue(homeStats, "Shots on Goal");
   const rematesBalizaFora = getStatValue(awayStats, "Shots on Goal");
-
   const cantosCasa = getStatValue(homeStats, "Corner Kicks");
   const cantosFora = getStatValue(awayStats, "Corner Kicks");
-
   const faltasCasa = getStatValue(homeStats, "Fouls");
   const faltasFora = getStatValue(awayStats, "Fouls");
 
@@ -417,15 +412,12 @@ async function renderDetalhes(jogo) {
   matchDetails.innerHTML = `
     <div class="details-card">
       <div class="details-title">Resumo do jogo</div>
-
       <div class="details-teams">
         <div class="details-team">
           <img src="${jogo.teams.home.logo}" alt="${jogo.teams.home.name}">
           <div>${jogo.teams.home.name}</div>
         </div>
-
         <div class="details-score">${jogo.goals.home ?? 0} - ${jogo.goals.away ?? 0}</div>
-
         <div class="details-team">
           <img src="${jogo.teams.away.logo}" alt="${jogo.teams.away.name}">
           <div>${jogo.teams.away.name}</div>
@@ -487,12 +479,7 @@ async function renderDetalhes(jogo) {
       <div class="details-meta">
         ${
           golos.length
-            ? golos
-                .map(
-                  (g) =>
-                    `<div>${g.time.elapsed}' • ${g.team.name} • ${g.player?.name || "Sem nome"}</div>`
-                )
-                .join("")
+            ? golos.map(g => `<div>${g.time.elapsed}' • ${g.team.name} • ${g.player?.name || "Sem nome"}</div>`).join("")
             : "<div>Sem golos registados.</div>"
         }
       </div>
@@ -503,12 +490,7 @@ async function renderDetalhes(jogo) {
       <div class="details-meta">
         ${
           amarelos.length
-            ? amarelos
-                .map(
-                  (c) =>
-                    `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`
-                )
-                .join("")
+            ? amarelos.map(c => `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`).join("")
             : "<div>Sem amarelos registados.</div>"
         }
       </div>
@@ -519,12 +501,7 @@ async function renderDetalhes(jogo) {
       <div class="details-meta">
         ${
           vermelhos.length
-            ? vermelhos
-                .map(
-                  (c) =>
-                    `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`
-                )
-                .join("")
+            ? vermelhos.map(c => `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`).join("")
             : "<div>Sem vermelhos registados.</div>"
         }
       </div>
@@ -545,30 +522,12 @@ function getStatValue(teamStats, statName) {
   return Number(stat.value) || 0;
 }
 
-function calcularDominio(
-  posseCasa,
-  posseFora,
-  rematesCasa,
-  rematesFora,
-  cantosCasa,
-  cantosFora
-) {
-  const pesoPosseCasa = posseCasa * 1;
-  const pesoPosseFora = posseFora * 1;
-
-  const pesoRematesCasa = rematesCasa * 8;
-  const pesoRematesFora = rematesFora * 8;
-
-  const pesoCantosCasa = cantosCasa * 4;
-  const pesoCantosFora = cantosFora * 4;
-
-  const totalCasa = pesoPosseCasa + pesoRematesCasa + pesoCantosCasa;
-  const totalFora = pesoPosseFora + pesoRematesFora + pesoCantosFora;
+function calcularDominio(posseCasa, posseFora, rematesCasa, rematesFora, cantosCasa, cantosFora) {
+  const totalCasa = (posseCasa * 1) + (rematesCasa * 8) + (cantosCasa * 4);
+  const totalFora = (posseFora * 1) + (rematesFora * 8) + (cantosFora * 4);
   const total = totalCasa + totalFora;
 
-  if (total === 0) {
-    return { home: 50, away: 50 };
-  }
+  if (total === 0) return { home: 50, away: 50 };
 
   return {
     home: Math.round((totalCasa / total) * 100),
