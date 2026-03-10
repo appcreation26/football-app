@@ -15,6 +15,9 @@
   --accent-soft: #123b2c;
   --danger: #ef4444;
   --warning: #facc15;
+  --tab-bg: #1a2335;
+  --tab-active-light: #f3f4f6;
+  --tab-active-dark: #111827;
 }
 
 body {
@@ -104,7 +107,7 @@ body {
 
 .dashboard {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 330px;
+  grid-template-columns: 250px minmax(0, 1fr) 330px;
   gap: 12px;
   padding: 12px;
 }
@@ -132,6 +135,8 @@ body {
   font-size: 12px;
 }
 
+/* LEFT COLUMN: COUNTRIES + LEAGUES */
+
 .league-list {
   display: flex;
   flex-direction: column;
@@ -141,13 +146,60 @@ body {
   padding-right: 4px;
 }
 
-.league-group-title {
-  font-size: 11px;
+.country-group {
+  border: 1px solid #1c2940;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.country-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: #121b2c;
+  font-size: 12px;
   font-weight: 700;
+  border-bottom: 1px solid transparent;
+}
+
+.country-header:hover {
+  background: #162135;
+}
+
+.country-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.country-flag {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.country-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.country-arrow {
+  font-size: 11px;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-top: 4px;
+}
+
+.country-leagues {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  gap: 4px;
 }
 
 .league-item {
@@ -180,21 +232,45 @@ body {
   flex-shrink: 0;
 }
 
+/* CENTER COLUMN */
+
+.center-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.games-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.games-tab {
+  border: none;
+  border-radius: 999px;
+  background: var(--tab-bg);
+  color: var(--text);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.games-tab:hover {
+  filter: brightness(1.08);
+}
+
+.games-tab.active {
+  background: var(--tab-active-light);
+  color: var(--tab-active-dark);
+}
+
 .games-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.games-section {
-  margin-bottom: 10px;
-}
-
-.section-title {
-  font-size: 13px;
-  margin: 0 0 10px 0;
-  color: #e2e8f0;
-  font-weight: 700;
 }
 
 .game-card {
@@ -302,6 +378,8 @@ body {
   font-size: 11px;
   margin-top: 3px;
 }
+
+/* RIGHT COLUMN */
 
 .match-details {
   display: flex;
@@ -449,7 +527,7 @@ body {
 
 @media (max-width: 1200px) {
   .dashboard {
-    grid-template-columns: 200px minmax(0, 1fr) 300px;
+    grid-template-columns: 220px minmax(0, 1fr) 320px;
   }
 }
 
@@ -482,5 +560,9 @@ body {
 
   .top-controls {
     justify-content: center;
+  }
+
+  .games-tabs {
+    flex-wrap: wrap;
   }
 }
