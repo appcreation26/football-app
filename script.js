@@ -60,34 +60,67 @@ const gamesContainer = document.getElementById("games");
 const leagueList = document.getElementById("leagueList");
 const matchDetails = document.getElementById("matchDetails");
 const loadBtn = document.getElementById("loadBtn");
+const currentDateLabel = document.getElementById("currentDateLabel");
 
 loadBtn.addEventListener("click", mostrarJogos);
 
 renderSidebar();
 atualizarLabelData();
+mostrarJogos();
 
-async function mostrarJogos() {
-  gamesContainer.innerHTML = `<p class="muted">🔄 A carregar jogos...</p>`;
-  matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+function formatarDataAPI(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
 
-  try {
-    const dataAPI = formatarDataAPI(dataSelecionada);
-    const resposta = await fetch(`/api/games?date=${dataAPI}`);
-    const dados = await resposta.json();
-    const currentDateLabel = document.getElementById("currentDateLabel");
+function formatarHora(dataIso) {
+  const data = new Date(dataIso);
+  return data.toLocaleTimeString("pt-PT", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
-    if (!dados.response || dados.response.length === 0) {
-      todosOsJogos = [];
-      renderJogos();
-      return;
-    }
+function formatarDataHora(dataIso) {
+  const data = new Date(dataIso);
+  return data.toLocaleString("pt-PT");
+}
 
-    todosOsJogos = dados.response;
-    renderJogos();
-  } catch (erro) {
-    console.error("Erro:", erro);
-    gamesContainer.innerHTML = `<p class="muted">Erro ao carregar jogos.</p>`;
+function atualizarLabelData() {
+  if (!currentDateLabel) return;
+
+  const hoje = new Date();
+  const hojeStr = formatarDataAPI(hoje);
+  const selecionadaStr = formatarDataAPI(dataSelecionada);
+
+  if (hojeStr === selecionadaStr) {
+    currentDateLabel.textContent = "Hoje";
+  } else {
+    currentDateLabel.textContent = dataSelecionada.toLocaleDateString("pt-PT", {
+      day: "2-digit",
+      month: "2-digit"
+    });
   }
+}
+
+function diaAnterior() {
+  dataSelecionada.setDate(dataSelecionada.getDate() - 1);
+  atualizarLabelData();
+  mostrarJogos();
+}
+
+function diaSeguinte() {
+  dataSelecionada.setDate(dataSelecionada.getDate() + 1);
+  atualizarLabelData();
+  mostrarJogos();
+}
+
+function irHoje() {
+  dataSelecionada = new Date();
+  atualizarLabelData();
+  mostrarJogos();
 }
 
 function getFavoritas() {
@@ -110,6 +143,29 @@ function toggleFavorita(nomeLiga) {
 
   guardarFavoritas(favoritas);
   renderSidebar();
+}
+
+async function mostrarJogos() {
+  gamesContainer.innerHTML = `<p class="muted">🔄 A carregar jogos...</p>`;
+  matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+
+  try {
+    const dataAPI = formatarDataAPI(dataSelecionada);
+    const resposta = await fetch(`/api/games?date=${dataAPI}`);
+    const dados = await resposta.json();
+
+    if (!dados.response || dados.response.length === 0) {
+      todosOsJogos = [];
+      renderJogos();
+      return;
+    }
+
+    todosOsJogos = dados.response;
+    renderJogos();
+  } catch (erro) {
+    console.error("Erro ao carregar jogos:", erro);
+    gamesContainer.innerHTML = `<p class="muted">Erro ao carregar jogos.</p>`;
+  }
 }
 
 function renderSidebar() {
@@ -135,7 +191,7 @@ function renderSidebar() {
     favLeagues.style.display = "flex";
 
     favoritas.forEach((liga) => {
-      const item = criarLeagueItem(liga, true);
+      const item = criarLeagueItem(liga);
       favLeagues.appendChild(item);
     });
 
@@ -156,7 +212,6 @@ function renderSidebar() {
 
     const countryHeader = document.createElement("div");
     countryHeader.className = "country-header";
-
     countryHeader.innerHTML = `
       <div class="country-header-left">
         <img src="${COUNTRY_FLAGS[pais] || ""}" class="country-flag" alt="${pais}">
@@ -172,7 +227,7 @@ function renderSidebar() {
     let paisTemLigaSelecionada = false;
 
     ligas.forEach((liga) => {
-      const item = criarLeagueItem(liga, false);
+      const item = criarLeagueItem(liga);
 
       if (ligaSelecionada === liga) {
         paisTemLigaSelecionada = true;
@@ -198,7 +253,7 @@ function renderSidebar() {
   });
 }
 
-function criarLeagueItem(liga, isFavoriteBlock) {
+function criarLeagueItem(liga) {
   const favoritas = getFavoritas();
   const item = document.createElement("div");
   item.className = "league-item";
@@ -562,27 +617,14 @@ function formatarDataHora(dataIso) {
   const data = new Date(dataIso);
   return data.toLocaleString("pt-PT");
 }
+
 function formatarDataAPI(data) {
   const ano = data.getFullYear();
   const mes = String(data.getMonth() + 1).padStart(2, "0");
   const dia = String(data.getDate()).padStart(2, "0");
-
   return `${ano}-${mes}-${dia}`;
 }
-function diaAnterior() {
-  dataSelecionada.setDate(dataSelecionada.getDate() - 1);
-  mostrarJogos();
-}
 
-function diaSeguinte() {
-  dataSelecionada.setDate(dataSelecionada.getDate() + 1);
-  mostrarJogos();
-}
-
-function irHoje() {
-  dataSelecionada = new Date();
-  mostrarJogos();
-}
 function atualizarLabelData() {
   if (!currentDateLabel) return;
 
