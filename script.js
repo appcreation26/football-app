@@ -64,6 +64,7 @@ const loadBtn = document.getElementById("loadBtn");
 loadBtn.addEventListener("click", mostrarJogos);
 
 renderSidebar();
+atualizarLabelData();
 
 async function mostrarJogos() {
   gamesContainer.innerHTML = `<p class="muted">🔄 A carregar jogos...</p>`;
@@ -72,7 +73,8 @@ async function mostrarJogos() {
   try {
     const dataAPI = formatarDataAPI(dataSelecionada);
     const resposta = await fetch(`/api/games?date=${dataAPI}`);
-
+    const dados = await resposta.json();
+    const currentDateLabel = document.getElementById("currentDateLabel");
 
     if (!dados.response || dados.response.length === 0) {
       todosOsJogos = [];
@@ -579,5 +581,39 @@ function diaSeguinte() {
 
 function irHoje() {
   dataSelecionada = new Date();
+  mostrarJogos();
+}
+function atualizarLabelData() {
+  if (!currentDateLabel) return;
+
+  const hoje = new Date();
+  const hojeStr = formatarDataAPI(hoje);
+  const selecionadaStr = formatarDataAPI(dataSelecionada);
+
+  if (hojeStr === selecionadaStr) {
+    currentDateLabel.textContent = "Hoje";
+  } else {
+    currentDateLabel.textContent = dataSelecionada.toLocaleDateString("pt-PT", {
+      day: "2-digit",
+      month: "2-digit"
+    });
+  }
+}
+
+function diaAnterior() {
+  dataSelecionada.setDate(dataSelecionada.getDate() - 1);
+  atualizarLabelData();
+  mostrarJogos();
+}
+
+function diaSeguinte() {
+  dataSelecionada.setDate(dataSelecionada.getDate() + 1);
+  atualizarLabelData();
+  mostrarJogos();
+}
+
+function irHoje() {
+  dataSelecionada = new Date();
+  atualizarLabelData();
   mostrarJogos();
 }
