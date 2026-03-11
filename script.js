@@ -1,65 +1,59 @@
 let todosOsJogos = [];
-let ligaSelecionada = null;
+let ligaSelecionada = "Primeira Liga";
 let jogoSelecionadoId = null;
 let tabSelecionada = "live";
 
-const ALLOWED_COUNTRIES = [
-  "Portugal",
-  "Spain",
-  "England",
-  "France",
-  "Germany",
-  "Italy",
-  "Netherlands",
-  "Belgium",
-  "Scotland",
-  "Turkey",
-  "Greece",
-  "Austria",
-  "Switzerland",
-  "Denmark",
-  "Sweden",
-  "Norway",
-  "Czech-Republic",
-  "Serbia",
-  "Romania",
-  "Hungary",
-  "Bulgaria",
-  "Slovakia",
-  "Slovenia"
-];
+const MENU_LIGAS = {
+  Portugal: ["Primeira Liga", "Liga Portugal 2"],
+  Spain: ["La Liga", "La Liga 2"],
+  England: ["Premier League", "Championship", "League One"],
+  France: ["Ligue 1"],
+  Germany: ["Bundesliga", "2. Bundesliga"],
+  Italy: ["Serie A"],
+  Netherlands: ["Eredivisie", "Eerste Divisie"],
+  Belgium: ["Pro League"],
+  Scotland: ["Premiership"],
+  Turkey: ["Süper Lig", "1. Lig"],
+  Greece: ["Super League"],
+  Austria: ["Austrian Bundesliga", "2. Liga"],
+  Switzerland: ["Super League"],
+  Denmark: ["Superliga"],
+  Sweden: ["Allsvenskan"],
+  Norway: ["Eliteserien"],
+  "Czech-Republic": ["Czech Liga"],
+  Serbia: ["Super Liga"],
+  Romania: ["Liga I"],
+  Hungary: ["NB I"],
+  Bulgaria: ["First League"],
+  Slovakia: ["Super Liga"],
+  Slovenia: ["PrvaLiga"]
+};
 
-const ALLOWED_LEAGUES = [
-  "Primeira Liga",
-  "Liga Portugal 2",
-  "La Liga",
-  "La Liga 2",
-  "Premier League",
-  "Championship",
-  "League One",
-  "Ligue 1",
-  "Bundesliga",
-  "2. Bundesliga",
-  "Serie A",
-  "Eredivisie",
-  "Eerste Divisie",
-  "Pro League",
-  "Premiership",
-  "Süper Lig",
-  "1. Lig",
-  "Super League",
-  "Austrian Bundesliga",
-  "Challenge League",
-  "Superliga",
-  "Allsvenskan",
-  "Eliteserien",
-  "Czech Liga",
-  "Super Liga",
-  "Liga I",
-  "NB I",
-  "First League",
-  "PrvaLiga"
-];
+const COUNTRY_FLAGS = {
+  Portugal: "https://media.api-sports.io/flags/pt.svg",
+  Spain: "https://media.api-sports.io/flags/es.svg",
+  England: "https://media.api-sports.io/flags/gb.svg",
+  France: "https://media.api-sports.io/flags/fr.svg",
+  Germany: "https://media.api-sports.io/flags/de.svg",
+  Italy: "https://media.api-sports.io/flags/it.svg",
+  Netherlands: "https://media.api-sports.io/flags/nl.svg",
+  Belgium: "https://media.api-sports.io/flags/be.svg",
+  Scotland: "https://media.api-sports.io/flags/gb.svg",
+  Turkey: "https://media.api-sports.io/flags/tr.svg",
+  Greece: "https://media.api-sports.io/flags/gr.svg",
+  Austria: "https://media.api-sports.io/flags/at.svg",
+  Switzerland: "https://media.api-sports.io/flags/ch.svg",
+  Denmark: "https://media.api-sports.io/flags/dk.svg",
+  Sweden: "https://media.api-sports.io/flags/se.svg",
+  Norway: "https://media.api-sports.io/flags/no.svg",
+  "Czech-Republic": "https://media.api-sports.io/flags/cz.svg",
+  Serbia: "https://media.api-sports.io/flags/rs.svg",
+  Romania: "https://media.api-sports.io/flags/ro.svg",
+  Hungary: "https://media.api-sports.io/flags/hu.svg",
+  Bulgaria: "https://media.api-sports.io/flags/bg.svg",
+  Slovakia: "https://media.api-sports.io/flags/sk.svg",
+  Slovenia: "https://media.api-sports.io/flags/si.svg"
+};
 
 const gamesContainer = document.getElementById("games");
 const leagueList = document.getElementById("leagueList");
@@ -68,9 +62,10 @@ const loadBtn = document.getElementById("loadBtn");
 
 loadBtn.addEventListener("click", mostrarJogos);
 
+renderSidebar();
+
 async function mostrarJogos() {
   gamesContainer.innerHTML = `<p class="muted">🔄 A carregar jogos...</p>`;
-  leagueList.innerHTML = `<p class="muted">🔄 A carregar ligas...</p>`;
   matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
 
   try {
@@ -79,86 +74,22 @@ async function mostrarJogos() {
 
     if (!dados.response || dados.response.length === 0) {
       todosOsJogos = [];
-      gamesContainer.innerHTML = `<p class="muted">Sem jogos neste dia.</p>`;
-      leagueList.innerHTML = `<p class="muted">Sem ligas disponíveis.</p>`;
+      renderJogos();
       return;
     }
 
-    // FILTRO PRINCIPAL: só países e ligas que queremos
-    todosOsJogos = dados.response.filter((jogo) => {
-      const country = (jogo.league.country || "").trim();
-      const leagueName = (jogo.league.name || "").trim();
-
-      return (
-        ALLOWED_COUNTRIES.includes(country) &&
-        ALLOWED_LEAGUES.includes(leagueName)
-      );
-    });
-
-    if (todosOsJogos.length === 0) {
-      gamesContainer.innerHTML = `<p class="muted">Nenhum jogo encontrado nas ligas escolhidas.</p>`;
-      leagueList.innerHTML = `<p class="muted">Sem ligas disponíveis.</p>`;
-      return;
-    }
-
-    if (!ligaSelecionada || !todosOsJogos.some(j => j.league.name === ligaSelecionada)) {
-      ligaSelecionada = todosOsJogos[0].league.name;
-    }
-
-    renderLigas(todosOsJogos);
+    todosOsJogos = dados.response;
     renderJogos();
   } catch (erro) {
     console.error("Erro:", erro);
     gamesContainer.innerHTML = `<p class="muted">Erro ao carregar jogos.</p>`;
-    leagueList.innerHTML = `<p class="muted">Erro ao carregar ligas.</p>`;
   }
 }
 
-function renderLigas(jogos) {
-  const mapaPaises = {};
-
-  jogos.forEach((jogo) => {
-    const country = (jogo.league.country || "").trim();
-    const leagueName = (jogo.league.name || "").trim();
-
-    if (!country || !leagueName) return;
-
-    if (!mapaPaises[country]) {
-      mapaPaises[country] = {
-        nome: country,
-        flag: jogo.league.flag || "",
-        ligas: {}
-      };
-    }
-
-    if (!mapaPaises[country].ligas[leagueName]) {
-      mapaPaises[country].ligas[leagueName] = {
-        nome: leagueName,
-        logo: jogo.league.logo || ""
-      };
-    }
-  });
-
-  const paises = Object.values(mapaPaises).sort((a, b) => {
-    const aIndex = ALLOWED_COUNTRIES.indexOf(a.nome);
-    const bIndex = ALLOWED_COUNTRIES.indexOf(b.nome);
-    return aIndex - bIndex;
-  });
-
+function renderSidebar() {
   leagueList.innerHTML = "";
 
-  if (paises.length === 0) {
-    leagueList.innerHTML = `<p class="muted">Sem países disponíveis.</p>`;
-    return;
-  }
-
-  paises.forEach((pais) => {
-    const ligasArray = Object.values(pais.ligas).sort((a, b) => {
-      const aIndex = ALLOWED_LEAGUES.indexOf(a.nome);
-      const bIndex = ALLOWED_LEAGUES.indexOf(b.nome);
-      return aIndex - bIndex;
-    });
-
+  Object.entries(MENU_LIGAS).forEach(([pais, ligas]) => {
     const countryGroup = document.createElement("div");
     countryGroup.className = "country-group";
 
@@ -167,8 +98,8 @@ function renderLigas(jogos) {
 
     countryHeader.innerHTML = `
       <div class="country-header-left">
-        ${pais.flag ? `<img src="${pais.flag}" class="country-flag" alt="${pais.nome}">` : ""}
-        <span class="country-name">${pais.nome}</span>
+        <img src="${COUNTRY_FLAGS[pais] || ""}" class="country-flag" alt="${pais}">
+        <span class="country-name">${pais}</span>
       </div>
       <span class="country-arrow">▶</span>
     `;
@@ -179,25 +110,24 @@ function renderLigas(jogos) {
 
     let paisTemLigaSelecionada = false;
 
-    ligasArray.forEach((liga) => {
+    ligas.forEach((liga) => {
       const item = document.createElement("div");
       item.className = "league-item";
 
-      if (ligaSelecionada === liga.nome) {
+      if (ligaSelecionada === liga) {
         item.classList.add("active");
         paisTemLigaSelecionada = true;
       }
 
       item.innerHTML = `
-        ${liga.logo ? `<img src="${liga.logo}" alt="${liga.nome}">` : ""}
-        <span>${liga.nome}</span>
+        <span>${liga}</span>
       `;
 
       item.addEventListener("click", (e) => {
         e.stopPropagation();
-        ligaSelecionada = liga.nome;
+        ligaSelecionada = liga;
         jogoSelecionadoId = null;
-        renderLigas(todosOsJogos);
+        renderSidebar();
         renderJogos();
         matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
       });
@@ -223,9 +153,9 @@ function renderLigas(jogos) {
 }
 
 function renderJogos() {
-  const jogosFiltrados = ligaSelecionada
-    ? todosOsJogos.filter((jogo) => jogo.league.name === ligaSelecionada)
-    : todosOsJogos;
+  const jogosFiltrados = todosOsJogos.filter(
+    (jogo) => jogo.league.name === ligaSelecionada
+  );
 
   gamesContainer.innerHTML = "";
   renderTabs();
@@ -233,7 +163,7 @@ function renderJogos() {
   if (jogosFiltrados.length === 0) {
     const empty = document.createElement("p");
     empty.className = "muted";
-    empty.textContent = "Sem jogos para esta liga.";
+    empty.textContent = "Sem jogos para esta liga nesta data.";
     gamesContainer.appendChild(empty);
     return;
   }
@@ -511,14 +441,11 @@ async function renderDetalhes(jogo) {
 
 function getStatValue(teamStats, statName) {
   if (!teamStats || !teamStats.statistics) return 0;
-
   const stat = teamStats.statistics.find((s) => s.type === statName);
   if (!stat || stat.value === null || stat.value === undefined) return 0;
-
   if (typeof stat.value === "string" && stat.value.includes("%")) {
     return parseInt(stat.value.replace("%", ""), 10) || 0;
   }
-
   return Number(stat.value) || 0;
 }
 
@@ -526,9 +453,7 @@ function calcularDominio(posseCasa, posseFora, rematesCasa, rematesFora, cantosC
   const totalCasa = (posseCasa * 1) + (rematesCasa * 8) + (cantosCasa * 4);
   const totalFora = (posseFora * 1) + (rematesFora * 8) + (cantosFora * 4);
   const total = totalCasa + totalFora;
-
   if (total === 0) return { home: 50, away: 50 };
-
   return {
     home: Math.round((totalCasa / total) * 100),
     away: Math.round((totalFora / total) * 100),
