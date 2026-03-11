@@ -1,3 +1,4 @@
+let dataSelecionada = new Date();
 let todosOsJogos = [];
 let ligaSelecionada = "Primeira Liga";
 let jogoSelecionadoId = null;
@@ -69,8 +70,9 @@ async function mostrarJogos() {
   matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
 
   try {
-    const resposta = await fetch("/api/live");
-    const dados = await resposta.json();
+    const dataAPI = formatarDataAPI(dataSelecionada);
+    const resposta = await fetch(`/api/games?date=${dataAPI}`);
+
 
     if (!dados.response || dados.response.length === 0) {
       todosOsJogos = [];
@@ -557,4 +559,25 @@ function formatarHora(dataIso) {
 function formatarDataHora(dataIso) {
   const data = new Date(dataIso);
   return data.toLocaleString("pt-PT");
+}
+function formatarDataAPI(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+function diaAnterior() {
+  dataSelecionada.setDate(dataSelecionada.getDate() - 1);
+  mostrarJogos();
+}
+
+function diaSeguinte() {
+  dataSelecionada.setDate(dataSelecionada.getDate() + 1);
+  mostrarJogos();
+}
+
+function irHoje() {
+  dataSelecionada = new Date();
+  mostrarJogos();
 }
