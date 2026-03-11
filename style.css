@@ -566,3 +566,43 @@ body {
     flex-wrap: wrap;
   }
 }
+.country-group {
+  flex-shrink: 0;
+}
+
+.country-leagues {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.league-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.league-item-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.favorite-btn {
+  background: transparent;
+  border: none;
+  color: #facc15;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
+}

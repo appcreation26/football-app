@@ -86,8 +86,65 @@ async function mostrarJogos() {
   }
 }
 
+function getFavoritas() {
+  const guardadas = localStorage.getItem("ligasFavoritas");
+  return guardadas ? JSON.parse(guardadas) : [];
+}
+
+function guardarFavoritas(lista) {
+  localStorage.setItem("ligasFavoritas", JSON.stringify(lista));
+}
+
+function toggleFavorita(nomeLiga) {
+  let favoritas = getFavoritas();
+
+  if (favoritas.includes(nomeLiga)) {
+    favoritas = favoritas.filter((l) => l !== nomeLiga);
+  } else {
+    favoritas.push(nomeLiga);
+  }
+
+  guardarFavoritas(favoritas);
+  renderSidebar();
+}
+
 function renderSidebar() {
   leagueList.innerHTML = "";
+
+  const favoritas = getFavoritas();
+
+  if (favoritas.length > 0) {
+    const favGroup = document.createElement("div");
+    favGroup.className = "country-group";
+
+    const favHeader = document.createElement("div");
+    favHeader.className = "country-header";
+    favHeader.innerHTML = `
+      <div class="country-header-left">
+        <span class="country-name">⭐ Favoritas</span>
+      </div>
+      <span class="country-arrow">▼</span>
+    `;
+
+    const favLeagues = document.createElement("div");
+    favLeagues.className = "country-leagues";
+    favLeagues.style.display = "flex";
+
+    favoritas.forEach((liga) => {
+      const item = criarLeagueItem(liga, true);
+      favLeagues.appendChild(item);
+    });
+
+    favHeader.addEventListener("click", () => {
+      const estaVisivel = favLeagues.style.display !== "none";
+      favLeagues.style.display = estaVisivel ? "none" : "flex";
+      favHeader.querySelector(".country-arrow").textContent = estaVisivel ? "▶" : "▼";
+    });
+
+    favGroup.appendChild(favHeader);
+    favGroup.appendChild(favLeagues);
+    leagueList.appendChild(favGroup);
+  }
 
   Object.entries(MENU_LIGAS).forEach(([pais, ligas]) => {
     const countryGroup = document.createElement("div");
@@ -111,26 +168,11 @@ function renderSidebar() {
     let paisTemLigaSelecionada = false;
 
     ligas.forEach((liga) => {
-      const item = document.createElement("div");
-      item.className = "league-item";
+      const item = criarLeagueItem(liga, false);
 
       if (ligaSelecionada === liga) {
-        item.classList.add("active");
         paisTemLigaSelecionada = true;
       }
-
-      item.innerHTML = `
-        <span>${liga}</span>
-      `;
-
-      item.addEventListener("click", (e) => {
-        e.stopPropagation();
-        ligaSelecionada = liga;
-        jogoSelecionadoId = null;
-        renderSidebar();
-        renderJogos();
-        matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
-      });
 
       countryLeagues.appendChild(item);
     });
@@ -150,6 +192,40 @@ function renderSidebar() {
     countryGroup.appendChild(countryLeagues);
     leagueList.appendChild(countryGroup);
   });
+}
+
+function criarLeagueItem(liga, isFavoriteBlock) {
+  const favoritas = getFavoritas();
+  const item = document.createElement("div");
+  item.className = "league-item";
+
+  if (ligaSelecionada === liga) {
+    item.classList.add("active");
+  }
+
+  const estrela = favoritas.includes(liga) ? "★" : "☆";
+
+  item.innerHTML = `
+    <div class="league-item-content">
+      <span>${liga}</span>
+    </div>
+    <button class="favorite-btn" type="button">${estrela}</button>
+  `;
+
+  item.addEventListener("click", () => {
+    ligaSelecionada = liga;
+    jogoSelecionadoId = null;
+    renderSidebar();
+    renderJogos();
+    matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+  });
+
+  item.querySelector(".favorite-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleFavorita(liga);
+  });
+
+  return item;
 }
 
 function renderJogos() {
