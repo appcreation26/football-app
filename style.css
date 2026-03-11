@@ -143,7 +143,7 @@ body {
   gap: 10px;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 10px;
 }
 
 .country-group {
@@ -605,4 +605,20 @@ body {
 
 .favorite-btn:hover {
   transform: scale(1.1);
+}
+.league-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.league-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.league-list::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 999px;
+}
+
+.league-list::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
