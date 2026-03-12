@@ -161,6 +161,31 @@ async function mostrarJogos() {
     }
 
     todosOsJogos = dados.response;
+
+    const jogosDaLiga = todosOsJogos.filter(
+      (jogo) => jogo.league.name === ligaSelecionada
+    );
+
+    const haLive = jogosDaLiga.some((jogo) =>
+      ["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(jogo.fixture.status.short)
+    );
+
+    const haUpcoming = jogosDaLiga.some((jogo) =>
+      ["NS", "TBD"].includes(jogo.fixture.status.short)
+    );
+
+    const haFinished = jogosDaLiga.some((jogo) =>
+      ["FT", "AET", "PEN"].includes(jogo.fixture.status.short)
+    );
+
+    if (haLive) {
+      tabSelecionada = "live";
+    } else if (haUpcoming) {
+      tabSelecionada = "upcoming";
+    } else if (haFinished) {
+      tabSelecionada = "finished";
+    }
+
     renderJogos();
   } catch (erro) {
     console.error("Erro ao carregar jogos:", erro);
@@ -521,7 +546,7 @@ async function renderDetalhes(jogo) {
         </div>
         <div class="dominance-values">
           <span>${dominio.home}%</span>
-          <span>${dominio.away}%</span>
+          <span>${dominio.away}%}</span>
         </div>
         <div class="muted small-note">
           Estimado com base em posse, remates à baliza e cantos.
@@ -603,59 +628,4 @@ function renderStatRow(label, homeValue, awayValue) {
       <div class="stat-away">${awayValue}</div>
     </div>
   `;
-}
-
-function formatarHora(dataIso) {
-  const data = new Date(dataIso);
-  return data.toLocaleTimeString("pt-PT", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatarDataHora(dataIso) {
-  const data = new Date(dataIso);
-  return data.toLocaleString("pt-PT");
-}
-
-function formatarDataAPI(data) {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-}
-
-function atualizarLabelData() {
-  if (!currentDateLabel) return;
-
-  const hoje = new Date();
-  const hojeStr = formatarDataAPI(hoje);
-  const selecionadaStr = formatarDataAPI(dataSelecionada);
-
-  if (hojeStr === selecionadaStr) {
-    currentDateLabel.textContent = "Hoje";
-  } else {
-    currentDateLabel.textContent = dataSelecionada.toLocaleDateString("pt-PT", {
-      day: "2-digit",
-      month: "2-digit"
-    });
-  }
-}
-
-function diaAnterior() {
-  dataSelecionada.setDate(dataSelecionada.getDate() - 1);
-  atualizarLabelData();
-  mostrarJogos();
-}
-
-function diaSeguinte() {
-  dataSelecionada.setDate(dataSelecionada.getDate() + 1);
-  atualizarLabelData();
-  mostrarJogos();
-}
-
-function irHoje() {
-  dataSelecionada = new Date();
-  atualizarLabelData();
-  mostrarJogos();
 }
