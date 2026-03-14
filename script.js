@@ -318,6 +318,7 @@ function toggleFavorita(country, display) {
 
   guardarFavoritas(favoritas);
   renderSidebar();
+  renderJogos();
 }
 
 function encontrarLigaConfig(country, display) {
@@ -341,6 +342,7 @@ function getDisplayLeagueFromGame(jogo) {
       if (liga.apiNames.includes(jogo.league.name)) {
         return {
           grupo: grupo.grupo,
+          country: grupo.apiCountry,
           display: liga.display
         };
       }
@@ -349,6 +351,7 @@ function getDisplayLeagueFromGame(jogo) {
 
   return {
     grupo: jogo.league.country,
+    country: jogo.league.country,
     display: jogo.league.name
   };
 }
@@ -586,6 +589,7 @@ function agruparJogosPorLiga(jogos) {
     if (!grupos[chave]) {
       grupos[chave] = {
         grupo: ligaInfo.grupo,
+        country: ligaInfo.country,
         liga: ligaInfo.display,
         logo: jogo.league.logo,
         jogos: []
@@ -595,7 +599,11 @@ function agruparJogosPorLiga(jogos) {
     grupos[chave].jogos.push(jogo);
   });
 
-  return Object.values(grupos).sort((a, b) => a.liga.localeCompare(b.liga, "pt"));
+  return Object.values(grupos).sort((a, b) => {
+    const textoA = `${a.grupo}: ${a.liga}`;
+    const textoB = `${b.grupo}: ${b.liga}`;
+    return textoA.localeCompare(textoB, "pt");
+  });
 }
 
 function renderJogos() {
@@ -613,6 +621,7 @@ function renderJogos() {
     return;
   }
 
+  const favoritas = getFavoritas();
   const ligasAgrupadas = agruparJogosPorLiga(jogosFiltrados);
 
   ligasAgrupadas.forEach((bloco) => {
@@ -623,14 +632,22 @@ function renderJogos() {
 
     const header = document.createElement("div");
     header.className = "league-section-header";
+
+    const headerKey = getLeagueKey(bloco.country, bloco.liga);
+    const headerFavorita = favoritas.includes(headerKey) ? "★" : "☆";
+
     header.innerHTML = `
       <div class="league-section-left">
-        <span class="league-star">☆</span>
+        <button class="league-header-favorite" type="button">${headerFavorita}</button>
         ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo" alt="${bloco.liga}">` : ""}
-        <span class="league-section-title">${bloco.liga}</span>
+        <span class="league-section-title">${bloco.grupo}: ${bloco.liga}</span>
       </div>
-      <span class="league-section-link">Classificações</span>
     `;
+
+    header.querySelector(".league-header-favorite").addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleFavorita(bloco.country, bloco.liga);
+    });
 
     section.appendChild(header);
 
