@@ -1,8 +1,8 @@
 let dataSelecionada = new Date();
 let todosOsJogos = [];
-let filtroLigaSelecionada = null; // null = mostrar todas as ligas permitidas
+let filtroLigaSelecionada = null; // null = mostrar todas as ligas
 let jogoSelecionadoId = null;
-let tabSelecionada = "live";
+let tabSelecionada = "all"; // all | live | finished | upcoming
 
 const MENU_LIGAS = [
   {
@@ -271,6 +271,7 @@ function diaAnterior() {
   dataSelecionada.setDate(dataSelecionada.getDate() - 1);
   filtroLigaSelecionada = null;
   jogoSelecionadoId = null;
+  tabSelecionada = "all";
   atualizarLabelData();
   renderSidebar();
   mostrarJogos();
@@ -280,6 +281,7 @@ function diaSeguinte() {
   dataSelecionada.setDate(dataSelecionada.getDate() + 1);
   filtroLigaSelecionada = null;
   jogoSelecionadoId = null;
+  tabSelecionada = "all";
   atualizarLabelData();
   renderSidebar();
   mostrarJogos();
@@ -289,6 +291,7 @@ function irHoje() {
   dataSelecionada = new Date();
   filtroLigaSelecionada = null;
   jogoSelecionadoId = null;
+  tabSelecionada = "all";
   atualizarLabelData();
   renderSidebar();
   mostrarJogos();
@@ -327,8 +330,27 @@ function encontrarLigaConfig(country, display) {
       }
     }
   }
-
   return null;
+}
+
+function getDisplayLeagueFromGame(jogo) {
+  for (const grupo of MENU_LIGAS) {
+    if (grupo.apiCountry !== jogo.league.country) continue;
+
+    for (const liga of grupo.ligas) {
+      if (liga.apiNames.includes(jogo.league.name)) {
+        return {
+          grupo: grupo.grupo,
+          display: liga.display
+        };
+      }
+    }
+  }
+
+  return {
+    grupo: jogo.league.country,
+    display: jogo.league.name
+  };
 }
 
 function jogoPertenceLiga(jogo, country, apiNames) {
@@ -358,26 +380,26 @@ function getJogosPermitidos() {
   return jogos;
 }
 
-function definirMelhorTab(jogos) {
-  const haLive = jogos.some((jogo) =>
-    ["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(jogo.fixture.status.short)
-  );
-
-  const haUpcoming = jogos.some((jogo) =>
-    ["NS", "TBD"].includes(jogo.fixture.status.short)
-  );
-
-  const haFinished = jogos.some((jogo) =>
-    ["FT", "AET", "PEN"].includes(jogo.fixture.status.short)
-  );
-
-  if (haLive) {
-    tabSelecionada = "live";
-  } else if (haUpcoming) {
-    tabSelecionada = "upcoming";
-  } else if (haFinished) {
-    tabSelecionada = "finished";
+function filtrarPorTab(jogos) {
+  if (tabSelecionada === "live") {
+    return jogos.filter((jogo) =>
+      ["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(jogo.fixture.status.short)
+    );
   }
+
+  if (tabSelecionada === "finished") {
+    return jogos.filter((jogo) =>
+      ["FT", "AET", "PEN"].includes(jogo.fixture.status.short)
+    );
+  }
+
+  if (tabSelecionada === "upcoming") {
+    return jogos.filter((jogo) =>
+      ["NS", "TBD"].includes(jogo.fixture.status.short)
+    );
+  }
+
+  return jogos;
 }
 
 async function mostrarJogos() {
@@ -396,7 +418,6 @@ async function mostrarJogos() {
     }
 
     todosOsJogos = dados.response;
-    definirMelhorTab(getJogosPermitidos());
     renderJogos();
   } catch (erro) {
     console.error("Erro ao carregar jogos:", erro);
@@ -526,10 +547,8 @@ function criarLeagueItem(country, display, apiNames) {
   item.addEventListener("click", () => {
     filtroLigaSelecionada = key;
     jogoSelecionadoId = null;
+    tabSelecionada = "all";
     renderSidebar();
-    definirMelhorTab(
-      todosOsJogos.filter((jogo) => jogoPertenceLiga(jogo, country, apiNames))
-    );
     renderJogos();
     matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
   });
@@ -542,8 +561,46 @@ function criarLeagueItem(country, display, apiNames) {
   return item;
 }
 
+function getTextoEstadoLinha(jogo) {
+  const status = jogo.fixture.status.short || "";
+  const minuto = jogo.fixture.status.elapsed || 0;
+
+  if (["NS", "TBD"].includes(status)) {
+    return formatarHora(jogo.fixture.date);
+  }
+
+  if (["FT", "AET", "PEN"].includes(status)) {
+    return "Terminado";
+  }
+
+  return `${minuto}'`;
+}
+
+function agruparJogosPorLiga(jogos) {
+  const grupos = {};
+
+  jogos.forEach((jogo) => {
+    const ligaInfo = getDisplayLeagueFromGame(jogo);
+    const chave = `${ligaInfo.grupo}|||${ligaInfo.display}`;
+
+    if (!grupos[chave]) {
+      grupos[chave] = {
+        grupo: ligaInfo.grupo,
+        liga: ligaInfo.display,
+        logo: jogo.league.logo,
+        jogos: []
+      };
+    }
+
+    grupos[chave].jogos.push(jogo);
+  });
+
+  return Object.values(grupos).sort((a, b) => a.liga.localeCompare(b.liga, "pt"));
+}
+
 function renderJogos() {
-  const jogosFiltrados = getJogosPermitidos();
+  const jogosBase = getJogosPermitidos();
+  const jogosFiltrados = filtrarPorTab(jogosBase);
 
   gamesContainer.innerHTML = "";
   renderTabs();
@@ -551,96 +608,72 @@ function renderJogos() {
   if (jogosFiltrados.length === 0) {
     const empty = document.createElement("p");
     empty.className = "muted";
-    empty.textContent = "Sem jogos para as ligas selecionadas nesta data.";
-    gamesContainer.appendChild(empty);
-    return;
-  }
-
-  const jogosLive = jogosFiltrados.filter((jogo) =>
-    ["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(jogo.fixture.status.short)
-  );
-
-  const jogosPorComecar = jogosFiltrados.filter((jogo) =>
-    ["NS", "TBD"].includes(jogo.fixture.status.short)
-  );
-
-  const jogosTerminados = jogosFiltrados.filter((jogo) =>
-    ["FT", "AET", "PEN"].includes(jogo.fixture.status.short)
-  );
-
-  let jogosParaMostrar = [];
-
-  if (tabSelecionada === "live") {
-    jogosParaMostrar = jogosLive;
-  } else if (tabSelecionada === "finished") {
-    jogosParaMostrar = jogosTerminados;
-  } else if (tabSelecionada === "upcoming") {
-    jogosParaMostrar = jogosPorComecar;
-  }
-
-  jogosParaMostrar.sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date));
-
-  if (jogosParaMostrar.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "muted";
     empty.textContent = "Sem jogos nesta categoria.";
     gamesContainer.appendChild(empty);
     return;
   }
 
-  jogosParaMostrar.forEach((jogo) => {
-    const card = document.createElement("div");
-    card.className = "game-card";
+  const ligasAgrupadas = agruparJogosPorLiga(jogosFiltrados);
 
-    if (jogoSelecionadoId === jogo.fixture.id) {
-      card.classList.add("selected");
-    }
+  ligasAgrupadas.forEach((bloco) => {
+    bloco.jogos.sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date));
 
-    const statusCurto = jogo.fixture.status.short || "";
-    const minuto = jogo.fixture.status.elapsed || 0;
+    const section = document.createElement("div");
+    section.className = "league-section";
 
-    let infoCentro = "";
-    if (["NS", "TBD"].includes(statusCurto)) {
-      infoCentro = formatarHora(jogo.fixture.date);
-    } else if (["FT", "AET", "PEN"].includes(statusCurto)) {
-      infoCentro = "FT";
-    } else {
-      infoCentro = `${minuto}'`;
-    }
-
-    card.innerHTML = `
-      <div class="game-top">
-        <div class="game-league">
-          <img src="${jogo.league.logo}" alt="${jogo.league.name}">
-          <span>${jogo.league.name}</span>
-        </div>
+    const header = document.createElement("div");
+    header.className = "league-section-header";
+    header.innerHTML = `
+      <div class="league-section-left">
+        <span class="league-star">☆</span>
+        ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo" alt="${bloco.liga}">` : ""}
+        <span class="league-section-title">${bloco.liga}</span>
       </div>
-
-      <div class="match-row">
-        <div class="team team-left">
-          <img src="${jogo.teams.home.logo}" class="logo" alt="${jogo.teams.home.name}">
-          <span class="team-name">${jogo.teams.home.name}</span>
-        </div>
-
-        <div class="score-box">
-          <div class="score">${jogo.goals.home ?? 0} - ${jogo.goals.away ?? 0}</div>
-          <div class="minute">${infoCentro}</div>
-        </div>
-
-        <div class="team team-right">
-          <span class="team-name">${jogo.teams.away.name}</span>
-          <img src="${jogo.teams.away.logo}" class="logo" alt="${jogo.teams.away.name}">
-        </div>
-      </div>
+      <span class="league-section-link">Classificações</span>
     `;
 
-    card.addEventListener("click", async () => {
-      jogoSelecionadoId = jogo.fixture.id;
-      renderJogos();
-      await renderDetalhes(jogo);
+    section.appendChild(header);
+
+    bloco.jogos.forEach((jogo) => {
+      const row = document.createElement("div");
+      row.className = "fixture-row";
+
+      if (jogoSelecionadoId === jogo.fixture.id) {
+        row.classList.add("selected");
+      }
+
+      row.innerHTML = `
+        <div class="fixture-status">
+          ${getTextoEstadoLinha(jogo)}
+        </div>
+
+        <div class="fixture-teams">
+          <div class="fixture-team-line">
+            <img src="${jogo.teams.home.logo}" class="fixture-team-logo" alt="${jogo.teams.home.name}">
+            <span class="fixture-team-name">${jogo.teams.home.name}</span>
+          </div>
+          <div class="fixture-team-line">
+            <img src="${jogo.teams.away.logo}" class="fixture-team-logo" alt="${jogo.teams.away.name}">
+            <span class="fixture-team-name">${jogo.teams.away.name}</span>
+          </div>
+        </div>
+
+        <div class="fixture-scores">
+          <div>${jogo.goals.home ?? "-"}</div>
+          <div>${jogo.goals.away ?? "-"}</div>
+        </div>
+      `;
+
+      row.addEventListener("click", async () => {
+        jogoSelecionadoId = jogo.fixture.id;
+        renderJogos();
+        await renderDetalhes(jogo);
+      });
+
+      section.appendChild(row);
     });
 
-    gamesContainer.appendChild(card);
+    gamesContainer.appendChild(section);
   });
 }
 
@@ -656,7 +689,14 @@ function renderTabs() {
 
   tabs.querySelectorAll(".games-tab").forEach((btn) => {
     btn.addEventListener("click", () => {
-      tabSelecionada = btn.dataset.tab;
+      const novaTab = btn.dataset.tab;
+
+      if (tabSelecionada === novaTab) {
+        tabSelecionada = "all";
+      } else {
+        tabSelecionada = novaTab;
+      }
+
       jogoSelecionadoId = null;
       renderJogos();
       matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
