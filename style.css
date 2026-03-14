@@ -144,6 +144,8 @@ body {
   max-height: calc(100vh - 120px);
   overflow-y: auto;
   padding-right: 10px;
+  padding-bottom: 220px;
+  scroll-padding-bottom: 220px;
 }
 
 .country-group {
