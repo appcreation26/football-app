@@ -1,5 +1,6 @@
 let dataSelecionada = new Date();
 let todosOsJogos = [];
+let oddsPorJogo = {};
 let filtroLigaSelecionada = null;
 let jogoSelecionadoId = null;
 let tabSelecionada = "all"; // all | live | finished | favorites
@@ -433,6 +434,24 @@ function filtrarPorTab(jogos) {
   return jogos;
 }
 
+async function carregarOddsFixas(jogos) {
+  const ids = jogos.map((jogo) => jogo.fixture.id).filter(Boolean);
+
+  if (ids.length === 0) {
+    oddsPorJogo = {};
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`/api/odds?ids=${ids.join(",")}`);
+    const dados = await resposta.json();
+    oddsPorJogo = dados.response || {};
+  } catch (erro) {
+    console.error("Erro ao carregar odds:", erro);
+    oddsPorJogo = {};
+  }
+}
+
 async function mostrarJogos() {
   gamesContainer.innerHTML = `<p class="muted">🔄 A carregar jogos...</p>`;
   matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
@@ -444,11 +463,13 @@ async function mostrarJogos() {
 
     if (!dados.response || dados.response.length === 0) {
       todosOsJogos = [];
+      oddsPorJogo = {};
       renderJogos();
       return;
     }
 
     todosOsJogos = dados.response;
+    await carregarOddsFixas(todosOsJogos);
     renderJogos();
   } catch (erro) {
     console.error("Erro ao carregar jogos:", erro);
@@ -607,6 +628,37 @@ function getTextoEstadoLinha(jogo) {
   return `${minuto}'`;
 }
 
+function deveMostrarOdds(jogo) {
+  const status = jogo.fixture.status.short || "";
+  return ["NS", "TBD", "FT", "AET", "PEN"].includes(status);
+}
+
+function renderOdds(jogo) {
+  if (!deveMostrarOdds(jogo)) {
+    return "";
+  }
+
+  const odds = oddsPorJogo[jogo.fixture.id];
+
+  if (!odds) {
+    return `
+      <div class="fixture-odds">
+        <div class="odd-box">-</div>
+        <div class="odd-box">-</div>
+        <div class="odd-box">-</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="fixture-odds">
+      <div class="odd-box">${odds.home}</div>
+      <div class="odd-box">${odds.draw}</div>
+      <div class="odd-box">${odds.away}</div>
+    </div>
+  `;
+}
+
 function agruparJogosPorLiga(jogos) {
   const grupos = {};
 
@@ -711,15 +763,19 @@ function renderJogos() {
             </div>
           </div>
 
-          <div class="fixture-teams">
-            <div class="fixture-team-line">
-              <img src="${jogo.teams.home.logo}" class="fixture-team-logo" alt="${jogo.teams.home.name}">
-              <span class="fixture-team-name">${jogo.teams.home.name}</span>
+          <div class="fixture-main">
+            <div class="fixture-teams">
+              <div class="fixture-team-line">
+                <img src="${jogo.teams.home.logo}" class="fixture-team-logo" alt="${jogo.teams.home.name}">
+                <span class="fixture-team-name">${jogo.teams.home.name}</span>
+              </div>
+              <div class="fixture-team-line">
+                <img src="${jogo.teams.away.logo}" class="fixture-team-logo" alt="${jogo.teams.away.name}">
+                <span class="fixture-team-name">${jogo.teams.away.name}</span>
+              </div>
             </div>
-            <div class="fixture-team-line">
-              <img src="${jogo.teams.away.logo}" class="fixture-team-logo" alt="${jogo.teams.away.name}">
-              <span class="fixture-team-name">${jogo.teams.away.name}</span>
-            </div>
+
+            ${renderOdds(jogo)}
           </div>
 
           <div class="fixture-scores">
