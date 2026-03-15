@@ -4,6 +4,7 @@ let filtroLigaSelecionada = null; // null = mostrar todas as ligas
 let jogoSelecionadoId = null;
 let tabSelecionada = "all"; // all | live | finished | upcoming
 let ligasFechadas = JSON.parse(localStorage.getItem("ligasFechadas") || "[]");
+let jogosFavoritos = JSON.parse(localStorage.getItem("jogosFavoritos") || "[]");
 
 const MENU_LIGAS = [
   {
@@ -233,6 +234,20 @@ function toggleLigaFechada(key) {
     ligasFechadas.push(key);
   }
   guardarLigasFechadas();
+  renderJogos();
+}
+
+function guardarJogosFavoritos() {
+  localStorage.setItem("jogosFavoritos", JSON.stringify(jogosFavoritos));
+}
+
+function toggleJogoFavorito(idJogo) {
+  if (jogosFavoritos.includes(idJogo)) {
+    jogosFavoritos = jogosFavoritos.filter((id) => id !== idJogo);
+  } else {
+    jogosFavoritos.push(idJogo);
+  }
+  guardarJogosFavoritos();
   renderJogos();
 }
 
@@ -687,9 +702,14 @@ function renderJogos() {
           row.classList.add("selected");
         }
 
+        const jogoFavorito = jogosFavoritos.includes(jogo.fixture.id) ? "★" : "☆";
+
         row.innerHTML = `
-          <div class="fixture-status">
-            ${getTextoEstadoLinha(jogo)}
+          <div class="fixture-left">
+            <button class="fixture-favorite-btn" type="button">${jogoFavorito}</button>
+            <div class="fixture-status">
+              ${getTextoEstadoLinha(jogo)}
+            </div>
           </div>
 
           <div class="fixture-teams">
@@ -713,6 +733,11 @@ function renderJogos() {
           jogoSelecionadoId = jogo.fixture.id;
           renderJogos();
           await renderDetalhes(jogo);
+        });
+
+        row.querySelector(".fixture-favorite-btn").addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleJogoFavorito(jogo.fixture.id);
         });
 
         section.appendChild(row);
