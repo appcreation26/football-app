@@ -1,8 +1,8 @@
 let dataSelecionada = new Date();
 let todosOsJogos = [];
-let filtroLigaSelecionada = null; // null = mostrar todas as ligas
+let filtroLigaSelecionada = null;
 let jogoSelecionadoId = null;
-let tabSelecionada = "all"; // all | live | finished | upcoming
+let tabSelecionada = "all"; // all | live | finished | favorites
 let ligasFechadas = JSON.parse(localStorage.getItem("ligasFechadas") || "[]");
 let jogosFavoritos = JSON.parse(localStorage.getItem("jogosFavoritos") || "[]");
 
@@ -426,10 +426,8 @@ function filtrarPorTab(jogos) {
     );
   }
 
-  if (tabSelecionada === "upcoming") {
-    return jogos.filter((jogo) =>
-      ["NS", "TBD"].includes(jogo.fixture.status.short)
-    );
+  if (tabSelecionada === "favorites") {
+    return jogos.filter((jogo) => jogosFavoritos.includes(jogo.fixture.id));
   }
 
   return jogos;
@@ -668,24 +666,14 @@ function renderJogos() {
     const estaFechada = ligasFechadas.includes(headerKey);
     const seta = estaFechada ? "▾" : "▴";
 
-   header.innerHTML = `
-    <div class="league-section-left">
+    header.innerHTML = `
+      <div class="league-section-left">
+        <button class="league-header-favorite" type="button">${headerFavorita}</button>
+        ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo">` : ""}
+        <span class="league-section-title">${bloco.grupo} ${bloco.liga}</span>
+      </div>
 
-    <button class="league-header-favorite" type="button">
-      ${headerFavorita}
-    </button>
-
-    ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo">` : ""}
-
-    <span class="league-section-title">
-      ${bloco.grupo} ${bloco.liga}
-    </span>
-
-    </div>
-
-    <button class="league-toggle-btn" type="button">
-    ${seta}
-    </button>
+      <button class="league-toggle-btn" type="button">${seta}</button>
     `;
 
     header.addEventListener("click", () => {
@@ -764,21 +752,47 @@ function renderTabs() {
   tabs.className = "games-tabs";
 
   tabs.innerHTML = `
+    <button class="games-tab ${tabSelecionada === "all" ? "active" : ""}" data-tab="all">Todos</button>
     <button class="games-tab ${tabSelecionada === "live" ? "active" : ""}" data-tab="live">Direto</button>
     <button class="games-tab ${tabSelecionada === "finished" ? "active" : ""}" data-tab="finished">Terminado</button>
-    <button class="games-tab ${tabSelecionada === "upcoming" ? "active" : ""}" data-tab="upcoming">Em Breve</button>
+    <button class="games-tab ${tabSelecionada === "favorites" ? "active" : ""}" data-tab="favorites">Favoritos</button>
   `;
 
   tabs.querySelectorAll(".games-tab").forEach((btn) => {
     btn.addEventListener("click", () => {
       const novaTab = btn.dataset.tab;
 
-      if (tabSelecionada === novaTab) {
+      if (novaTab === "all") {
         tabSelecionada = "all";
-      } else {
-        tabSelecionada = novaTab;
+        filtroLigaSelecionada = null;
+        jogoSelecionadoId = null;
+        renderSidebar();
+        renderJogos();
+        matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+        return;
       }
 
+      if (novaTab === "favorites") {
+        tabSelecionada = "favorites";
+        filtroLigaSelecionada = null;
+        jogoSelecionadoId = null;
+        renderSidebar();
+        renderJogos();
+        matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+        return;
+      }
+
+      if (tabSelecionada === novaTab) {
+        tabSelecionada = "all";
+        filtroLigaSelecionada = null;
+        jogoSelecionadoId = null;
+        renderSidebar();
+        renderJogos();
+        matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+        return;
+      }
+
+      tabSelecionada = novaTab;
       jogoSelecionadoId = null;
       renderJogos();
       matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
