@@ -122,7 +122,7 @@ body {
   font-size: 13px;
 }
 
-/* LEFT COLUMN */
+/* LEFT */
 
 .league-list {
   display: flex;
@@ -251,7 +251,7 @@ body {
   transform: scale(1.08);
 }
 
-/* CENTER COLUMN */
+/* CENTER */
 
 .center-column {
   display: flex;
@@ -263,6 +263,7 @@ body {
   align-items: center;
   gap: 10px;
   margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
 .games-tab {
@@ -367,24 +368,21 @@ body {
 
 .fixture-row {
   display: grid;
-  grid-template-columns: 96px 1fr 52px;
+  grid-template-columns: 96px minmax(0, 1fr) 48px 178px;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
-  border: 1px solid #29384f;
-  border-radius: 14px;
-  cursor: pointer;
-  background: #2a303b;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  border-top: 1px solid #21324b;
+  background: #061521;
 }
 
 .fixture-row:hover {
-  background: #343b48;
+  background: #0b2032;
 }
 
 .fixture-row.selected {
-  background: #183252;
-  border-color: #35547e;
+  background: #102942;
 }
 
 .fixture-left {
@@ -396,12 +394,13 @@ body {
 .fixture-favorite-btn {
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: #d6dde8;
   cursor: pointer;
   font-size: 16px;
   padding: 0;
   line-height: 1;
   width: 16px;
+  flex-shrink: 0;
 }
 
 .fixture-favorite-btn:hover {
@@ -410,7 +409,7 @@ body {
 
 .fixture-status {
   font-size: 12px;
-  color: #e2e8f0;
+  color: #dbe4ef;
   font-weight: 700;
   min-width: 0;
 }
@@ -418,7 +417,7 @@ body {
 .fixture-teams {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
   min-width: 0;
 }
 
@@ -430,8 +429,8 @@ body {
 }
 
 .fixture-team-logo {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -440,20 +439,79 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .fixture-scores {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  text-align: right;
-  font-size: 16px;
+  gap: 5px;
+  text-align: center;
+  font-size: 14px;
   font-weight: 700;
   color: #ffffff;
 }
 
-/* RIGHT COLUMN */
+.fixture-odds {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.empty-odds {
+  min-height: 32px;
+}
+
+.odd-box {
+  width: 54px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 6px;
+  background: #07131f;
+  border: 1px solid #203448;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.odd-box.up {
+  border-color: #facc15;
+}
+
+.odd-box.down {
+  border-color: #203448;
+}
+
+.odd-box.neutral {
+  border-color: #203448;
+}
+
+.odd-trend {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.odd-box.up .odd-trend {
+  color: #22c55e;
+}
+
+.odd-box.down .odd-trend {
+  color: #ef4444;
+}
+
+.odd-box.neutral .odd-trend {
+  color: #94a3b8;
+}
+
+.odd-value {
+  color: #ffffff;
+}
+
+/* RIGHT */
 
 .match-details {
   display: flex;
@@ -595,6 +653,14 @@ body {
   .dashboard {
     grid-template-columns: 250px minmax(0, 1fr) 380px;
   }
+
+  .fixture-row {
+    grid-template-columns: 88px minmax(0, 1fr) 40px 168px;
+  }
+
+  .odd-box {
+    width: 50px;
+  }
 }
 
 @media (max-width: 1020px) {
@@ -631,10 +697,6 @@ body {
     flex-wrap: wrap;
   }
 
-  .fixture-row {
-    grid-template-columns: 88px 1fr 42px;
-  }
-
   .league-section-title {
     font-size: 14px;
   }
@@ -642,5 +704,17 @@ body {
   .league-section-logo {
     width: 24px;
     height: 24px;
+  }
+
+  .fixture-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .fixture-left,
+  .fixture-scores,
+  .fixture-odds {
+    justify-content: flex-start;
+    text-align: left;
   }
 }

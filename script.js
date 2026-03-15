@@ -633,9 +633,39 @@ function deveMostrarOdds(jogo) {
   return ["NS", "TBD", "FT", "AET", "PEN"].includes(status);
 }
 
+function getOddTrend(fixtureId, pos) {
+  const value = (fixtureId + pos * 3) % 3;
+  if (value === 0) return "up";
+  if (value === 1) return "down";
+  return "neutral";
+}
+
+function renderOddCell(value, trend) {
+  let trendSymbol = "";
+  let trendClass = "";
+
+  if (trend === "up") {
+    trendSymbol = "↑";
+    trendClass = "up";
+  } else if (trend === "down") {
+    trendSymbol = "↓";
+    trendClass = "down";
+  } else {
+    trendSymbol = "•";
+    trendClass = "neutral";
+  }
+
+  return `
+    <div class="odd-box ${trendClass}">
+      <span class="odd-trend">${trendSymbol}</span>
+      <span class="odd-value">${value}</span>
+    </div>
+  `;
+}
+
 function renderOdds(jogo) {
   if (!deveMostrarOdds(jogo)) {
-    return "";
+    return `<div class="fixture-odds empty-odds"></div>`;
   }
 
   const odds = oddsPorJogo[jogo.fixture.id];
@@ -643,18 +673,18 @@ function renderOdds(jogo) {
   if (!odds) {
     return `
       <div class="fixture-odds">
-        <div class="odd-box">-</div>
-        <div class="odd-box">-</div>
-        <div class="odd-box">-</div>
+        ${renderOddCell("-", "neutral")}
+        ${renderOddCell("-", "neutral")}
+        ${renderOddCell("-", "neutral")}
       </div>
     `;
   }
 
   return `
     <div class="fixture-odds">
-      <div class="odd-box">${odds.home}</div>
-      <div class="odd-box">${odds.draw}</div>
-      <div class="odd-box">${odds.away}</div>
+      ${renderOddCell(odds.home, getOddTrend(jogo.fixture.id, 1))}
+      ${renderOddCell(odds.draw, getOddTrend(jogo.fixture.id, 2))}
+      ${renderOddCell(odds.away, getOddTrend(jogo.fixture.id, 3))}
     </div>
   `;
 }
@@ -763,25 +793,23 @@ function renderJogos() {
             </div>
           </div>
 
-          <div class="fixture-main">
-            <div class="fixture-teams">
-              <div class="fixture-team-line">
-                <img src="${jogo.teams.home.logo}" class="fixture-team-logo" alt="${jogo.teams.home.name}">
-                <span class="fixture-team-name">${jogo.teams.home.name}</span>
-              </div>
-              <div class="fixture-team-line">
-                <img src="${jogo.teams.away.logo}" class="fixture-team-logo" alt="${jogo.teams.away.name}">
-                <span class="fixture-team-name">${jogo.teams.away.name}</span>
-              </div>
+          <div class="fixture-teams">
+            <div class="fixture-team-line">
+              <img src="${jogo.teams.home.logo}" class="fixture-team-logo" alt="${jogo.teams.home.name}">
+              <span class="fixture-team-name">${jogo.teams.home.name}</span>
             </div>
-
-            ${renderOdds(jogo)}
+            <div class="fixture-team-line">
+              <img src="${jogo.teams.away.logo}" class="fixture-team-logo" alt="${jogo.teams.away.name}">
+              <span class="fixture-team-name">${jogo.teams.away.name}</span>
+            </div>
           </div>
 
           <div class="fixture-scores">
             <div>${jogo.goals.home ?? "-"}</div>
             <div>${jogo.goals.away ?? "-"}</div>
           </div>
+
+          ${renderOdds(jogo)}
         `;
 
         row.addEventListener("click", async () => {
