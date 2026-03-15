@@ -668,13 +668,24 @@ function renderJogos() {
     const estaFechada = ligasFechadas.includes(headerKey);
     const seta = estaFechada ? "▾" : "▴";
 
-    header.innerHTML = `
-      <div class="league-section-left">
-        <button class="league-toggle-btn" type="button">${seta}</button>
-        <button class="league-header-favorite" type="button">${headerFavorita}</button>
-        ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo" alt="${bloco.liga}">` : ""}
-        <span class="league-section-title">${bloco.grupo}: ${bloco.liga}</span>
-      </div>
+   header.innerHTML = `
+    <div class="league-section-left">
+
+    <button class="league-header-favorite" type="button">
+      ${headerFavorita}
+    </button>
+
+    ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo">` : ""}
+
+    <span class="league-section-title">
+      ${bloco.grupo} ${bloco.liga}
+    </span>
+
+    </div>
+
+    <button class="league-toggle-btn" type="button">
+    ${seta}
+    </button>
     `;
 
     header.addEventListener("click", () => {
