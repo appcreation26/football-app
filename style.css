@@ -366,6 +366,28 @@ body {
   text-overflow: ellipsis;
 }
 
+.odds-header-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 48px 178px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px 6px 12px;
+}
+
+.odds-header-labels {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.odds-header-labels span {
+  width: 54px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
 .fixture-row {
   display: grid;
   grid-template-columns: 96px minmax(0, 1fr) 48px 178px;
@@ -469,42 +491,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   border-radius: 6px;
   background: #07131f;
-  border: 1px solid #203448;
+  border: 1px solid #ffffff;
   color: #ffffff;
   font-size: 12px;
   font-weight: 700;
-}
-
-.odd-box.up {
-  border-color: #facc15;
-}
-
-.odd-box.down {
-  border-color: #203448;
-}
-
-.odd-box.neutral {
-  border-color: #203448;
-}
-
-.odd-trend {
-  font-size: 14px;
-  line-height: 1;
-}
-
-.odd-box.up .odd-trend {
-  color: #22c55e;
-}
-
-.odd-box.down .odd-trend {
-  color: #ef4444;
-}
-
-.odd-box.neutral .odd-trend {
-  color: #94a3b8;
 }
 
 .odd-value {
@@ -654,11 +646,13 @@ body {
     grid-template-columns: 250px minmax(0, 1fr) 380px;
   }
 
-  .fixture-row {
+  .fixture-row,
+  .odds-header-row {
     grid-template-columns: 88px minmax(0, 1fr) 40px 168px;
   }
 
-  .odd-box {
+  .odd-box,
+  .odds-header-labels span {
     width: 50px;
   }
 }
@@ -704,6 +698,10 @@ body {
   .league-section-logo {
     width: 24px;
     height: 24px;
+  }
+
+  .odds-header-row {
+    display: none;
   }
 
   .fixture-row {

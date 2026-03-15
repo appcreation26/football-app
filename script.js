@@ -633,31 +633,9 @@ function deveMostrarOdds(jogo) {
   return ["NS", "TBD", "FT", "AET", "PEN"].includes(status);
 }
 
-function getOddTrend(fixtureId, pos) {
-  const value = (fixtureId + pos * 3) % 3;
-  if (value === 0) return "up";
-  if (value === 1) return "down";
-  return "neutral";
-}
-
-function renderOddCell(value, trend) {
-  let trendSymbol = "";
-  let trendClass = "";
-
-  if (trend === "up") {
-    trendSymbol = "↑";
-    trendClass = "up";
-  } else if (trend === "down") {
-    trendSymbol = "↓";
-    trendClass = "down";
-  } else {
-    trendSymbol = "•";
-    trendClass = "neutral";
-  }
-
+function renderOddCell(value) {
   return `
-    <div class="odd-box ${trendClass}">
-      <span class="odd-trend">${trendSymbol}</span>
+    <div class="odd-box">
       <span class="odd-value">${value}</span>
     </div>
   `;
@@ -673,18 +651,39 @@ function renderOdds(jogo) {
   if (!odds) {
     return `
       <div class="fixture-odds">
-        ${renderOddCell("-", "neutral")}
-        ${renderOddCell("-", "neutral")}
-        ${renderOddCell("-", "neutral")}
+        ${renderOddCell("-")}
+        ${renderOddCell("-")}
+        ${renderOddCell("-")}
       </div>
     `;
   }
 
   return `
     <div class="fixture-odds">
-      ${renderOddCell(odds.home, getOddTrend(jogo.fixture.id, 1))}
-      ${renderOddCell(odds.draw, getOddTrend(jogo.fixture.id, 2))}
-      ${renderOddCell(odds.away, getOddTrend(jogo.fixture.id, 3))}
+      ${renderOddCell(odds.home)}
+      ${renderOddCell(odds.draw)}
+      ${renderOddCell(odds.away)}
+    </div>
+  `;
+}
+
+function renderOddsHeader(jogosDaLiga) {
+  const mostrarCabecalho = jogosDaLiga.some((jogo) => deveMostrarOdds(jogo));
+
+  if (!mostrarCabecalho) {
+    return "";
+  }
+
+  return `
+    <div class="odds-header-row">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div class="odds-header-labels">
+        <span>1</span>
+        <span>X</span>
+        <span>2</span>
+      </div>
     </div>
   `;
 }
@@ -775,6 +774,8 @@ function renderJogos() {
     section.appendChild(header);
 
     if (!estaFechada) {
+      section.insertAdjacentHTML("beforeend", renderOddsHeader(bloco.jogos));
+
       bloco.jogos.forEach((jogo) => {
         const row = document.createElement("div");
         row.className = "fixture-row";
