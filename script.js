@@ -613,24 +613,56 @@ function criarLeagueItem(country, display, apiNames) {
   return item;
 }
 
+function traduzirEstado(statusShort, statusLong) {
+  const mapa = {
+    NS: "Por começar",
+    TBD: "Por definir",
+    FT: "Terminado",
+    AET: "Após prolongamento",
+    PEN: "Penáltis",
+    PST: "Adiado",
+    CANC: "Cancelado",
+    ABD: "Abandonado",
+    AWD: "Atribuído",
+    WO: "Falta de comparência",
+    INT: "Interrompido",
+    SUSP: "Suspenso",
+    LIVE: "Ao vivo",
+    HT: "Intervalo",
+    ET: "Prolongamento",
+    BT: "Intervalo",
+    P: "Penáltis"
+  };
+
+  if (mapa[statusShort]) {
+    return mapa[statusShort];
+  }
+
+  return statusLong || statusShort || "-";
+}
+
 function getTextoEstadoLinha(jogo) {
   const status = jogo.fixture.status.short || "";
-  const minuto = jogo.fixture.status.elapsed || 0;
+  const statusLong = jogo.fixture.status.long || "";
+  const minuto = jogo.fixture.status.elapsed;
+
+  if (["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(status)) {
+    return minuto ? `${minuto}'` : traduzirEstado(status, statusLong);
+  }
 
   if (["NS", "TBD"].includes(status)) {
     return formatarHora(jogo.fixture.date);
   }
 
-  if (["FT", "AET", "PEN"].includes(status)) {
-    return "Terminado";
+  if (["FT", "AET", "PEN", "PST", "CANC", "ABD", "AWD", "WO", "INT", "SUSP"].includes(status)) {
+    return traduzirEstado(status, statusLong);
   }
 
-  return `${minuto}'`;
-}
+  if (minuto && Number(minuto) > 0) {
+    return `${minuto}'`;
+  }
 
-function deveMostrarOdds(jogo) {
-  const status = jogo.fixture.status.short || "";
-  return ["NS", "TBD", "FT", "AET", "PEN"].includes(status);
+  return traduzirEstado(status, statusLong);
 }
 
 function renderOddCell(value) {
@@ -642,10 +674,6 @@ function renderOddCell(value) {
 }
 
 function renderOdds(jogo) {
-  if (!deveMostrarOdds(jogo)) {
-    return `<div class="fixture-odds empty-odds"></div>`;
-  }
-
   const odds = oddsPorJogo[jogo.fixture.id];
 
   if (!odds) {
@@ -667,13 +695,7 @@ function renderOdds(jogo) {
   `;
 }
 
-function renderOddsHeader(jogosDaLiga) {
-  const mostrarCabecalho = jogosDaLiga.some((jogo) => deveMostrarOdds(jogo));
-
-  if (!mostrarCabecalho) {
-    return "";
-  }
-
+function renderOddsHeader() {
   return `
     <div class="odds-header-row">
       <div></div>
@@ -774,7 +796,7 @@ function renderJogos() {
     section.appendChild(header);
 
     if (!estaFechada) {
-      section.insertAdjacentHTML("beforeend", renderOddsHeader(bloco.jogos));
+      section.insertAdjacentHTML("beforeend", renderOddsHeader());
 
       bloco.jogos.forEach((jogo) => {
         const row = document.createElement("div");
