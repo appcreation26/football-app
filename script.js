@@ -3,6 +3,7 @@ let todosOsJogos = [];
 let filtroLigaSelecionada = null; // null = mostrar todas as ligas
 let jogoSelecionadoId = null;
 let tabSelecionada = "all"; // all | live | finished | upcoming
+let ligasFechadas = JSON.parse(localStorage.getItem("ligasFechadas") || "[]");
 
 const MENU_LIGAS = [
   {
@@ -220,6 +221,20 @@ loadBtn.addEventListener("click", mostrarJogos);
 renderSidebar();
 atualizarLabelData();
 mostrarJogos();
+
+function guardarLigasFechadas() {
+  localStorage.setItem("ligasFechadas", JSON.stringify(ligasFechadas));
+}
+
+function toggleLigaFechada(key) {
+  if (ligasFechadas.includes(key)) {
+    ligasFechadas = ligasFechadas.filter((item) => item !== key);
+  } else {
+    ligasFechadas.push(key);
+  }
+  guardarLigasFechadas();
+  renderJogos();
+}
 
 function getLeagueKey(country, display) {
   return `${country}|||${display}`;
@@ -635,60 +650,74 @@ function renderJogos() {
 
     const headerKey = getLeagueKey(bloco.country, bloco.liga);
     const headerFavorita = favoritas.includes(headerKey) ? "★" : "☆";
+    const estaFechada = ligasFechadas.includes(headerKey);
+    const seta = estaFechada ? "▾" : "▴";
 
     header.innerHTML = `
       <div class="league-section-left">
+        <button class="league-toggle-btn" type="button">${seta}</button>
         <button class="league-header-favorite" type="button">${headerFavorita}</button>
         ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo" alt="${bloco.liga}">` : ""}
         <span class="league-section-title">${bloco.grupo}: ${bloco.liga}</span>
       </div>
     `;
 
+    header.addEventListener("click", () => {
+      toggleLigaFechada(headerKey);
+    });
+
     header.querySelector(".league-header-favorite").addEventListener("click", (e) => {
       e.stopPropagation();
       toggleFavorita(bloco.country, bloco.liga);
     });
 
+    header.querySelector(".league-toggle-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleLigaFechada(headerKey);
+    });
+
     section.appendChild(header);
 
-    bloco.jogos.forEach((jogo) => {
-      const row = document.createElement("div");
-      row.className = "fixture-row";
+    if (!estaFechada) {
+      bloco.jogos.forEach((jogo) => {
+        const row = document.createElement("div");
+        row.className = "fixture-row";
 
-      if (jogoSelecionadoId === jogo.fixture.id) {
-        row.classList.add("selected");
-      }
+        if (jogoSelecionadoId === jogo.fixture.id) {
+          row.classList.add("selected");
+        }
 
-      row.innerHTML = `
-        <div class="fixture-status">
-          ${getTextoEstadoLinha(jogo)}
-        </div>
-
-        <div class="fixture-teams">
-          <div class="fixture-team-line">
-            <img src="${jogo.teams.home.logo}" class="fixture-team-logo" alt="${jogo.teams.home.name}">
-            <span class="fixture-team-name">${jogo.teams.home.name}</span>
+        row.innerHTML = `
+          <div class="fixture-status">
+            ${getTextoEstadoLinha(jogo)}
           </div>
-          <div class="fixture-team-line">
-            <img src="${jogo.teams.away.logo}" class="fixture-team-logo" alt="${jogo.teams.away.name}">
-            <span class="fixture-team-name">${jogo.teams.away.name}</span>
+
+          <div class="fixture-teams">
+            <div class="fixture-team-line">
+              <img src="${jogo.teams.home.logo}" class="fixture-team-logo" alt="${jogo.teams.home.name}">
+              <span class="fixture-team-name">${jogo.teams.home.name}</span>
+            </div>
+            <div class="fixture-team-line">
+              <img src="${jogo.teams.away.logo}" class="fixture-team-logo" alt="${jogo.teams.away.name}">
+              <span class="fixture-team-name">${jogo.teams.away.name}</span>
+            </div>
           </div>
-        </div>
 
-        <div class="fixture-scores">
-          <div>${jogo.goals.home ?? "-"}</div>
-          <div>${jogo.goals.away ?? "-"}</div>
-        </div>
-      `;
+          <div class="fixture-scores">
+            <div>${jogo.goals.home ?? "-"}</div>
+            <div>${jogo.goals.away ?? "-"}</div>
+          </div>
+        `;
 
-      row.addEventListener("click", async () => {
-        jogoSelecionadoId = jogo.fixture.id;
-        renderJogos();
-        await renderDetalhes(jogo);
+        row.addEventListener("click", async () => {
+          jogoSelecionadoId = jogo.fixture.id;
+          renderJogos();
+          await renderDetalhes(jogo);
+        });
+
+        section.appendChild(row);
       });
-
-      section.appendChild(row);
-    });
+    }
 
     gamesContainer.appendChild(section);
   });
