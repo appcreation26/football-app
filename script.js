@@ -40,9 +40,7 @@ const MENU_LIGAS = [
     grupo: "França",
     apiCountry: "France",
     flag: "https://media.api-sports.io/flags/fr.svg",
-    ligas: [
-      { display: "Ligue 1", apiNames: ["Ligue 1"] }
-    ]
+    ligas: [{ display: "Ligue 1", apiNames: ["Ligue 1"] }]
   },
   {
     grupo: "Alemanha",
@@ -57,9 +55,7 @@ const MENU_LIGAS = [
     grupo: "Itália",
     apiCountry: "Italy",
     flag: "https://media.api-sports.io/flags/it.svg",
-    ligas: [
-      { display: "Serie A", apiNames: ["Serie A"] }
-    ]
+    ligas: [{ display: "Serie A", apiNames: ["Serie A"] }]
   },
   {
     grupo: "Países Baixos",
@@ -74,17 +70,13 @@ const MENU_LIGAS = [
     grupo: "Bélgica",
     apiCountry: "Belgium",
     flag: "https://media.api-sports.io/flags/be.svg",
-    ligas: [
-      { display: "Pro League", apiNames: ["Jupiler Pro League", "Pro League"] }
-    ]
+    ligas: [{ display: "Pro League", apiNames: ["Jupiler Pro League", "Pro League"] }]
   },
   {
     grupo: "Escócia",
     apiCountry: "Scotland",
     flag: "https://media.api-sports.io/flags/gb.svg",
-    ligas: [
-      { display: "Premiership", apiNames: ["Premiership"] }
-    ]
+    ligas: [{ display: "Premiership", apiNames: ["Premiership"] }]
   },
   {
     grupo: "Turquia",
@@ -99,9 +91,7 @@ const MENU_LIGAS = [
     grupo: "Grécia",
     apiCountry: "Greece",
     flag: "https://media.api-sports.io/flags/gr.svg",
-    ligas: [
-      { display: "Super League", apiNames: ["Super League 1", "Super League"] }
-    ]
+    ligas: [{ display: "Super League", apiNames: ["Super League 1", "Super League"] }]
   },
   {
     grupo: "Áustria",
@@ -116,89 +106,67 @@ const MENU_LIGAS = [
     grupo: "Suíça",
     apiCountry: "Switzerland",
     flag: "https://media.api-sports.io/flags/ch.svg",
-    ligas: [
-      { display: "Super League", apiNames: ["Super League"] }
-    ]
+    ligas: [{ display: "Super League", apiNames: ["Super League"] }]
   },
   {
     grupo: "Dinamarca",
     apiCountry: "Denmark",
     flag: "https://media.api-sports.io/flags/dk.svg",
-    ligas: [
-      { display: "Superliga", apiNames: ["Superliga"] }
-    ]
+    ligas: [{ display: "Superliga", apiNames: ["Superliga"] }]
   },
   {
     grupo: "Suécia",
     apiCountry: "Sweden",
     flag: "https://media.api-sports.io/flags/se.svg",
-    ligas: [
-      { display: "Allsvenskan", apiNames: ["Allsvenskan"] }
-    ]
+    ligas: [{ display: "Allsvenskan", apiNames: ["Allsvenskan"] }]
   },
   {
     grupo: "Noruega",
     apiCountry: "Norway",
     flag: "https://media.api-sports.io/flags/no.svg",
-    ligas: [
-      { display: "Eliteserien", apiNames: ["Eliteserien"] }
-    ]
+    ligas: [{ display: "Eliteserien", apiNames: ["Eliteserien"] }]
   },
   {
     grupo: "República Checa",
     apiCountry: "Czech-Republic",
     flag: "https://media.api-sports.io/flags/cz.svg",
-    ligas: [
-      { display: "Czech Liga", apiNames: ["Czech Liga"] }
-    ]
+    ligas: [{ display: "Czech Liga", apiNames: ["Czech Liga"] }]
   },
   {
     grupo: "Sérvia",
     apiCountry: "Serbia",
     flag: "https://media.api-sports.io/flags/rs.svg",
-    ligas: [
-      { display: "Super Liga", apiNames: ["Super Liga"] }
-    ]
+    ligas: [{ display: "Super Liga", apiNames: ["Super Liga"] }]
   },
   {
     grupo: "Roménia",
     apiCountry: "Romania",
     flag: "https://media.api-sports.io/flags/ro.svg",
-    ligas: [
-      { display: "Liga I", apiNames: ["Liga I"] }
-    ]
+    ligas: [{ display: "Liga I", apiNames: ["Liga I"] }]
   },
   {
     grupo: "Hungria",
     apiCountry: "Hungary",
     flag: "https://media.api-sports.io/flags/hu.svg",
-    ligas: [
-      { display: "NB I", apiNames: ["NB I"] }
-    ]
+    ligas: [{ display: "NB I", apiNames: ["NB I"] }]
   },
   {
     grupo: "Bulgária",
     apiCountry: "Bulgaria",
     flag: "https://media.api-sports.io/flags/bg.svg",
-    ligas: [
-      { display: "First League", apiNames: ["First League"] }
-    ]
+    ligas: [{ display: "First League", apiNames: ["First League"] }]
   },
   {
     grupo: "Eslováquia",
     apiCountry: "Slovakia",
     flag: "https://media.api-sports.io/flags/sk.svg",
-    ligas: [
-      { display: "Super Liga", apiNames: ["Super Liga"] }
-    ]
+    ligas: [{ display: "Super Liga", apiNames: ["Super Liga"] }]
   },
   {
     grupo: "Eslovénia",
     apiCountry: "Slovenia",
     flag: "https://media.api-sports.io/flags/si.svg",
-    ligas: [
-      { display: "PrvaLiga", apiNames: ["PrvaLiga", "1. SNL"] }
-    ]
+    ligas: [{ display: "PrvaLiga", apiNames: ["PrvaLiga", "1. SNL"] }]
   },
   {
     grupo: "Europa",
@@ -355,11 +323,8 @@ function toggleFavorita(country, display) {
 function encontrarLigaConfig(country, display) {
   for (const grupo of MENU_LIGAS) {
     if (grupo.apiCountry !== country) continue;
-
     for (const liga of grupo.ligas) {
-      if (liga.display === display) {
-        return liga;
-      }
+      if (liga.display === display) return liga;
     }
   }
   return null;
@@ -368,7 +333,6 @@ function encontrarLigaConfig(country, display) {
 function getDisplayLeagueFromGame(jogo) {
   for (const grupo of MENU_LIGAS) {
     if (grupo.apiCountry !== jogo.league.country) continue;
-
     for (const liga of grupo.ligas) {
       if (liga.apiNames.includes(jogo.league.name)) {
         return {
@@ -403,7 +367,6 @@ function getJogosPermitidos() {
   if (filtroLigaSelecionada) {
     const { country, display } = parseLeagueKey(filtroLigaSelecionada);
     const ligaConfig = encontrarLigaConfig(country, display);
-
     if (!ligaConfig) return [];
 
     jogos = jogos.filter((jogo) =>
@@ -634,11 +597,13 @@ function traduzirEstado(statusShort, statusLong) {
     P: "Penáltis"
   };
 
-  if (mapa[statusShort]) {
-    return mapa[statusShort];
-  }
-
+  if (mapa[statusShort]) return mapa[statusShort];
   return statusLong || statusShort || "-";
+}
+
+function isJogoLive(jogo) {
+  const status = jogo.fixture.status.short || "";
+  return ["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(status);
 }
 
 function getTextoEstadoLinha(jogo) {
@@ -646,7 +611,7 @@ function getTextoEstadoLinha(jogo) {
   const statusLong = jogo.fixture.status.long || "";
   const minuto = jogo.fixture.status.elapsed;
 
-  if (["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(status)) {
+  if (isJogoLive(jogo)) {
     return minuto ? `${minuto}'` : traduzirEstado(status, statusLong);
   }
 
@@ -663,6 +628,14 @@ function getTextoEstadoLinha(jogo) {
   }
 
   return traduzirEstado(status, statusLong);
+}
+
+function renderLiveIcon(jogo) {
+  if (!isJogoLive(jogo)) {
+    return "";
+  }
+
+  return `<span class="fixture-live-icon" title="Jogo em direto"></span>`;
 }
 
 function renderOddCell(value) {
@@ -811,6 +784,7 @@ function renderJogos() {
         row.innerHTML = `
           <div class="fixture-left">
             <button class="fixture-favorite-btn" type="button">${jogoFavorito}</button>
+            ${renderLiveIcon(jogo)}
             <div class="fixture-status">
               ${getTextoEstadoLinha(jogo)}
             </div>
