@@ -6,6 +6,9 @@ let jogoSelecionadoId = null;
 let tabSelecionada = "all";
 let ligasFechadas = JSON.parse(localStorage.getItem("ligasFechadas") || "[]");
 let jogosFavoritos = JSON.parse(localStorage.getItem("jogosFavoritos") || "[]");
+let jogosComAlerta = JSON.parse(localStorage.getItem("jogosComAlerta") || "[]");
+let estadoAlertasJogos = JSON.parse(localStorage.getItem("estadoAlertasJogos") || "{}");
+let intervaloAlertas = null;
 
 const MENU_LIGAS = [
   {
@@ -188,12 +191,26 @@ const currentDateLabel = document.getElementById("currentDateLabel");
 
 loadBtn.addEventListener("click", mostrarJogos);
 
+criarToastContainer();
 renderSidebar();
 atualizarLabelData();
 mostrarJogos();
+iniciarMonitorizacaoAlertas();
 
 function guardarLigasFechadas() {
   localStorage.setItem("ligasFechadas", JSON.stringify(ligasFechadas));
+}
+
+function guardarJogosFavoritos() {
+  localStorage.setItem("jogosFavoritos", JSON.stringify(jogosFavoritos));
+}
+
+function guardarJogosComAlerta() {
+  localStorage.setItem("jogosComAlerta", JSON.stringify(jogosComAlerta));
+}
+
+function guardarEstadoAlertasJogos() {
+  localStorage.setItem("estadoAlertasJogos", JSON.stringify(estadoAlertasJogos));
 }
 
 function toggleLigaFechada(key) {
@@ -204,10 +221,6 @@ function toggleLigaFechada(key) {
   }
   guardarLigasFechadas();
   renderJogos();
-}
-
-function guardarJogosFavoritos() {
-  localStorage.setItem("jogosFavoritos", JSON.stringify(jogosFavoritos));
 }
 
 function toggleJogoFavorito(idJogo) {
@@ -468,7 +481,7 @@ function renderSidebar() {
       const ligaConfig = encontrarLigaConfig(country, display);
 
       if (ligaConfig) {
-        const item = criarLeagueItem(country, display, ligaConfig.apiNames);
+        const item = criarLeagueItem(country, display);
         favLeagues.appendChild(item);
       }
     });
@@ -505,7 +518,7 @@ function renderSidebar() {
     let grupoTemLigaSelecionada = false;
 
     grupo.ligas.forEach((liga) => {
-      const item = criarLeagueItem(grupo.apiCountry, liga.display, liga.apiNames);
+      const item = criarLeagueItem(grupo.apiCountry, liga.display);
 
       if (filtroLigaSelecionada === getLeagueKey(grupo.apiCountry, liga.display)) {
         grupoTemLigaSelecionada = true;
@@ -607,6 +620,11 @@ function isJogoLive(jogo) {
   return ["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(status);
 }
 
+function isJogoFinished(jogo) {
+  const status = jogo.fixture.status.short || "";
+  return ["FT", "AET", "PEN"].includes(status);
+}
+
 function getTextoEstadoLinha(jogo) {
   const status = jogo.fixture.status.short || "";
   const statusLong = jogo.fixture.status.long || "";
@@ -666,6 +684,18 @@ function renderOdds(jogo) {
   `;
 }
 
+function renderBellButton(jogo) {
+  const ativo = jogosComAlerta.includes(jogo.fixture.id);
+  return `
+    <button
+      class="fixture-bell-btn ${ativo ? "active" : ""}"
+      type="button"
+      aria-label="Ativar alertas do jogo"
+      title="${ativo ? "Alertas ativos" : "Ativar alertas"}"
+    ></button>
+  `;
+}
+
 function renderOddsHeader() {
   return `
     <div class="odds-header-row">
@@ -677,6 +707,7 @@ function renderOddsHeader() {
         <span>X</span>
         <span>2</span>
       </div>
+      <div></div>
     </div>
   `;
 }
@@ -798,6 +829,7 @@ function renderJogos() {
           </div>
 
           ${renderOdds(jogo)}
+          ${renderBellButton(jogo)}
         `;
 
         row.addEventListener("click", async () => {
@@ -809,6 +841,11 @@ function renderJogos() {
         row.querySelector(".fixture-favorite-btn").addEventListener("click", (e) => {
           e.stopPropagation();
           toggleJogoFavorito(jogo.fixture.id);
+        });
+
+        row.querySelector(".fixture-bell-btn").addEventListener("click", async (e) => {
+          e.stopPropagation();
+          await toggleAlertaJogo(jogo);
         });
 
         section.appendChild(row);
@@ -1028,4 +1065,183 @@ function renderStatRow(label, homeValue, awayValue) {
       <div class="stat-away">${awayValue}</div>
     </div>
   `;
+}
+
+/* ALERTAS */
+
+function criarToastContainer() {
+  if (document.getElementById("toastContainer")) return;
+
+  const container = document.createElement("div");
+  container.id = "toastContainer";
+  container.className = "toast-container";
+  document.body.appendChild(container);
+}
+
+function mostrarToast(titulo, mensagem) {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = "toast-item";
+  toast.innerHTML = `
+    <div class="toast-title">${titulo}</div>
+    <div class="toast-message">${mensagem}</div>
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("hide");
+    setTimeout(() => toast.remove(), 300);
+  }, 4500);
+}
+
+function contarCartoesVermelhos(eventos) {
+  return eventos.filter(
+    (evento) =>
+      evento.type === "Card" &&
+      (evento.detail === "Red Card" || evento.detail === "Second Yellow card")
+  ).length;
+}
+
+async function obterEventosJogo(idJogo) {
+  try {
+    const resposta = await fetch(`/api/fixture-details?id=${idJogo}`);
+    const dados = await resposta.json();
+    return dados.response || [];
+  } catch (erro) {
+    console.error("Erro ao obter eventos do jogo:", erro);
+    return [];
+  }
+}
+
+async function criarEstadoInicialAlerta(jogo) {
+  const eventos = await obterEventosJogo(jogo.fixture.id);
+
+  return {
+    id: jogo.fixture.id,
+    homeName: jogo.teams.home.name,
+    awayName: jogo.teams.away.name,
+    homeGoals: Number(jogo.goals.home ?? 0),
+    awayGoals: Number(jogo.goals.away ?? 0),
+    statusShort: jogo.fixture.status.short || "",
+    redCards: contarCartoesVermelhos(eventos)
+  };
+}
+
+async function toggleAlertaJogo(jogo) {
+  const id = jogo.fixture.id;
+
+  if (jogosComAlerta.includes(id)) {
+    jogosComAlerta = jogosComAlerta.filter((item) => item !== id);
+    delete estadoAlertasJogos[id];
+    guardarJogosComAlerta();
+    guardarEstadoAlertasJogos();
+    mostrarToast("Alertas desativados", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
+  } else {
+    jogosComAlerta.push(id);
+    estadoAlertasJogos[id] = await criarEstadoInicialAlerta(jogo);
+    guardarJogosComAlerta();
+    guardarEstadoAlertasJogos();
+    mostrarToast("Alertas ativados", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
+  }
+
+  renderJogos();
+  iniciarMonitorizacaoAlertas();
+}
+
+function iniciarMonitorizacaoAlertas() {
+  if (intervaloAlertas) {
+    clearInterval(intervaloAlertas);
+    intervaloAlertas = null;
+  }
+
+  if (jogosComAlerta.length === 0) return;
+
+  intervaloAlertas = setInterval(() => {
+    verificarAlertasJogos();
+  }, 30000);
+}
+
+async function verificarAlertasJogos() {
+  if (jogosComAlerta.length === 0) return;
+
+  try {
+    const dataAPI = formatarDataAPI(dataSelecionada);
+    const resposta = await fetch(`/api/games?date=${dataAPI}`);
+    const dados = await resposta.json();
+    const jogosDia = dados.response || [];
+
+    const jogosMonitorizados = jogosDia.filter((jogo) => jogosComAlerta.includes(jogo.fixture.id));
+
+    for (const jogo of jogosMonitorizados) {
+      const id = jogo.fixture.id;
+
+      if (!estadoAlertasJogos[id]) {
+        estadoAlertasJogos[id] = await criarEstadoInicialAlerta(jogo);
+        continue;
+      }
+
+      const anterior = estadoAlertasJogos[id];
+      const atualStatus = jogo.fixture.status.short || "";
+      const atualHomeGoals = Number(jogo.goals.home ?? 0);
+      const atualAwayGoals = Number(jogo.goals.away ?? 0);
+
+      if (["NS", "TBD"].includes(anterior.statusShort) && isJogoLive(jogo)) {
+        mostrarToast(
+          "Jogo começou",
+          `${jogo.teams.home.name} x ${jogo.teams.away.name}`
+        );
+      }
+
+      if (anterior.statusShort !== "HT" && atualStatus === "HT") {
+        mostrarToast(
+          "Intervalo",
+          `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`
+        );
+      }
+
+      if (!["FT", "AET", "PEN"].includes(anterior.statusShort) && isJogoFinished(jogo)) {
+        mostrarToast(
+          "Fim do jogo",
+          `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`
+        );
+      }
+
+      const totalAnterior = Number(anterior.homeGoals) + Number(anterior.awayGoals);
+      const totalAtual = atualHomeGoals + atualAwayGoals;
+
+      if (totalAtual > totalAnterior) {
+        mostrarToast(
+          "Golo",
+          `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`
+        );
+      }
+
+      const eventos = await obterEventosJogo(id);
+      const vermelhosAtuais = contarCartoesVermelhos(eventos);
+
+      if (vermelhosAtuais > Number(anterior.redCards || 0)) {
+        mostrarToast(
+          "Cartão vermelho",
+          `${jogo.teams.home.name} x ${jogo.teams.away.name}`
+        );
+      }
+
+      estadoAlertasJogos[id] = {
+        id,
+        homeName: jogo.teams.home.name,
+        awayName: jogo.teams.away.name,
+        homeGoals: atualHomeGoals,
+        awayGoals: atualAwayGoals,
+        statusShort: atualStatus,
+        redCards: vermelhosAtuais
+      };
+    }
+
+    guardarEstadoAlertasJogos();
+  } catch (erro) {
+    console.error("Erro ao verificar alertas:", erro);
+  }
 }
