@@ -1041,39 +1041,6 @@ async function renderDetalhes(jogo) {
   `;
 }
 
-function getStatValue(teamStats, statName) {
-  if (!teamStats || !teamStats.statistics) return 0;
-  const stat = teamStats.statistics.find((s) => s.type === statName);
-  if (!stat || stat.value === null || stat.value === undefined) return 0;
-  if (typeof stat.value === "string" && stat.value.includes("%")) {
-    return parseInt(stat.value.replace("%", ""), 10) || 0;
-  }
-  return Number(stat.value) || 0;
-}
-
-function calcularDominio(posseCasa, posseFora, rematesCasa, rematesFora, cantosCasa, cantosFora) {
-  const totalCasa = posseCasa + rematesCasa * 8 + cantosCasa * 4;
-  const totalFora = posseFora + rematesFora * 8 + cantosFora * 4;
-  const total = totalCasa + totalFora;
-
-  if (total === 0) return { home: 50, away: 50 };
-
-  return {
-    home: Math.round((totalCasa / total) * 100),
-    away: Math.round((totalFora / total) * 100),
-  };
-}
-
-function renderStatRow(label, homeValue, awayValue) {
-  return `
-    <div class="stat-row">
-      <div class="stat-home">${homeValue}</div>
-      <div class="stat-label">${label}</div>
-      <div class="stat-away">${awayValue}</div>
-    </div>
-  `;
-}
-
 /* ALERTAS */
 
 function criarToastContainer() {
@@ -1196,44 +1163,29 @@ async function verificarAlertasJogos() {
       const atualAwayGoals = Number(jogo.goals.away ?? 0);
 
       if (["NS", "TBD"].includes(anterior.statusShort) && isJogoLive(jogo)) {
-        mostrarToast(
-          "Jogo começou",
-          `${jogo.teams.home.name} x ${jogo.teams.away.name}`
-        );
+        mostrarToast("Jogo começou", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
       }
 
       if (anterior.statusShort !== "HT" && atualStatus === "HT") {
-        mostrarToast(
-          "Intervalo",
-          `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`
-        );
+        mostrarToast("Intervalo", `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`);
       }
 
       if (!["FT", "AET", "PEN"].includes(anterior.statusShort) && isJogoFinished(jogo)) {
-        mostrarToast(
-          "Fim do jogo",
-          `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`
-        );
+        mostrarToast("Fim do jogo", `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`);
       }
 
       const totalAnterior = Number(anterior.homeGoals) + Number(anterior.awayGoals);
       const totalAtual = atualHomeGoals + atualAwayGoals;
 
       if (totalAtual > totalAnterior) {
-        mostrarToast(
-          "Golo",
-          `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`
-        );
+        mostrarToast("Golo", `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`);
       }
 
       const eventos = await obterEventosJogo(id);
       const vermelhosAtuais = contarCartoesVermelhos(eventos);
 
       if (vermelhosAtuais > Number(anterior.redCards || 0)) {
-        mostrarToast(
-          "Cartão vermelho",
-          `${jogo.teams.home.name} x ${jogo.teams.away.name}`
-        );
+        mostrarToast("Cartão vermelho", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
       }
 
       estadoAlertasJogos[id] = {
