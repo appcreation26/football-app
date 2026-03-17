@@ -1,4 +1,4 @@
-** {
+* {
   box-sizing: border-box;
 }
 
@@ -563,12 +563,22 @@ body {
 .fixture-bell-icon {
   width: 16px;
   height: 16px;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background-image: url("./bell-icon.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   filter: brightness(0) saturate(100%) invert(100%);
+}
+
+.fixture-bell-btn.active .fixture-bell-icon {
+  width: auto;
+  height: auto;
+  background-image: none;
+  filter: none;
+  font-size: 18px;
 }
 
 /* TOASTS */

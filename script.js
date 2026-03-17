@@ -4,6 +4,7 @@ let oddsPorJogo = {};
 let filtroLigaSelecionada = null;
 let jogoSelecionadoId = null;
 let tabSelecionada = "all";
+
 let ligasFechadas = JSON.parse(localStorage.getItem("ligasFechadas") || "[]");
 let jogosFavoritos = JSON.parse(localStorage.getItem("jogosFavoritos") || "[]");
 let jogosComAlerta = JSON.parse(localStorage.getItem("jogosComAlerta") || "[]");
@@ -189,13 +190,17 @@ const matchDetails = document.getElementById("matchDetails");
 const loadBtn = document.getElementById("loadBtn");
 const currentDateLabel = document.getElementById("currentDateLabel");
 
-loadBtn.addEventListener("click", mostrarJogos);
+if (loadBtn) {
+  loadBtn.addEventListener("click", mostrarJogos);
+}
 
 criarToastContainer();
 renderSidebar();
 atualizarLabelData();
 mostrarJogos();
 iniciarMonitorizacaoAlertas();
+
+/* -------------------- STORAGE -------------------- */
 
 function guardarLigasFechadas() {
   localStorage.setItem("ligasFechadas", JSON.stringify(ligasFechadas));
@@ -213,34 +218,7 @@ function guardarEstadoAlertasJogos() {
   localStorage.setItem("estadoAlertasJogos", JSON.stringify(estadoAlertasJogos));
 }
 
-function toggleLigaFechada(key) {
-  if (ligasFechadas.includes(key)) {
-    ligasFechadas = ligasFechadas.filter((item) => item !== key);
-  } else {
-    ligasFechadas.push(key);
-  }
-  guardarLigasFechadas();
-  renderJogos();
-}
-
-function toggleJogoFavorito(idJogo) {
-  if (jogosFavoritos.includes(idJogo)) {
-    jogosFavoritos = jogosFavoritos.filter((id) => id !== idJogo);
-  } else {
-    jogosFavoritos.push(idJogo);
-  }
-  guardarJogosFavoritos();
-  renderJogos();
-}
-
-function getLeagueKey(country, display) {
-  return `${country}|||${display}`;
-}
-
-function parseLeagueKey(key) {
-  const [country, display] = key.split("|||");
-  return { country, display };
-}
+/* -------------------- DATE -------------------- */
 
 function formatarDataAPI(data) {
   const ano = data.getFullYear();
@@ -309,6 +287,17 @@ function irHoje() {
   mostrarJogos();
 }
 
+/* -------------------- FAVORITAS -------------------- */
+
+function getLeagueKey(country, display) {
+  return `${country}|||${display}`;
+}
+
+function parseLeagueKey(key) {
+  const [country, display] = key.split("|||");
+  return { country, display };
+}
+
 function getFavoritas() {
   const guardadas = localStorage.getItem("ligasFavoritas");
   return guardadas ? JSON.parse(guardadas) : [];
@@ -333,6 +322,28 @@ function toggleFavorita(country, display) {
   renderJogos();
 }
 
+function toggleJogoFavorito(idJogo) {
+  if (jogosFavoritos.includes(idJogo)) {
+    jogosFavoritos = jogosFavoritos.filter((id) => id !== idJogo);
+  } else {
+    jogosFavoritos.push(idJogo);
+  }
+  guardarJogosFavoritos();
+  renderJogos();
+}
+
+/* -------------------- LEAGUES -------------------- */
+
+function toggleLigaFechada(key) {
+  if (ligasFechadas.includes(key)) {
+    ligasFechadas = ligasFechadas.filter((item) => item !== key);
+  } else {
+    ligasFechadas.push(key);
+  }
+  guardarLigasFechadas();
+  renderJogos();
+}
+
 function encontrarLigaConfig(country, display) {
   for (const grupo of MENU_LIGAS) {
     if (grupo.apiCountry !== country) continue;
@@ -346,7 +357,6 @@ function encontrarLigaConfig(country, display) {
 function getDisplayLeagueFromGame(jogo) {
   for (const grupo of MENU_LIGAS) {
     if (grupo.apiCountry !== jogo.league.country) continue;
-
     for (const liga of grupo.ligas) {
       if (liga.apiNames.includes(jogo.league.name)) {
         return {
@@ -382,10 +392,7 @@ function getJogosPermitidos() {
     const { country, display } = parseLeagueKey(filtroLigaSelecionada);
     const ligaConfig = encontrarLigaConfig(country, display);
     if (!ligaConfig) return [];
-
-    jogos = jogos.filter((jogo) =>
-      jogoPertenceLiga(jogo, country, ligaConfig.apiNames)
-    );
+    jogos = jogos.filter((jogo) => jogoPertenceLiga(jogo, country, ligaConfig.apiNames));
   }
 
   return jogos;
@@ -411,6 +418,8 @@ function filtrarPorTab(jogos) {
   return jogos;
 }
 
+/* -------------------- API -------------------- */
+
 async function carregarOddsFixas(jogos) {
   const ids = jogos.map((jogo) => jogo.fixture.id).filter(Boolean);
 
@@ -430,15 +439,19 @@ async function carregarOddsFixas(jogos) {
 }
 
 async function mostrarJogos() {
-  gamesContainer.innerHTML = `<p class="muted">🔄 A carregar jogos...</p>`;
-  matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+  if (gamesContainer) {
+    gamesContainer.innerHTML = `<p class="muted">🔄 A carregar jogos...</p>`;
+  }
+  if (matchDetails) {
+    matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+  }
 
   try {
     const dataAPI = formatarDataAPI(dataSelecionada);
     const resposta = await fetch(`/api/games?date=${dataAPI}`);
     const dados = await resposta.json();
 
-    if (!dados.response || dados.response.length === 0) {
+    if (!dados.response || !Array.isArray(dados.response) || dados.response.length === 0) {
       todosOsJogos = [];
       oddsPorJogo = {};
       renderJogos();
@@ -450,13 +463,18 @@ async function mostrarJogos() {
     renderJogos();
   } catch (erro) {
     console.error("Erro ao carregar jogos:", erro);
-    gamesContainer.innerHTML = `<p class="muted">Erro ao carregar jogos.</p>`;
+    if (gamesContainer) {
+      gamesContainer.innerHTML = `<p class="muted">Erro ao carregar jogos.</p>`;
+    }
   }
 }
 
-function renderSidebar() {
-  leagueList.innerHTML = "";
+/* -------------------- SIDEBAR -------------------- */
 
+function renderSidebar() {
+  if (!leagueList) return;
+
+  leagueList.innerHTML = "";
   const favoritas = getFavoritas();
 
   if (favoritas.length > 0) {
@@ -481,8 +499,7 @@ function renderSidebar() {
       const ligaConfig = encontrarLigaConfig(country, display);
 
       if (ligaConfig) {
-        const item = criarLeagueItem(country, display);
-        favLeagues.appendChild(item);
+        favLeagues.appendChild(criarLeagueItem(country, display));
       }
     });
 
@@ -518,13 +535,10 @@ function renderSidebar() {
     let grupoTemLigaSelecionada = false;
 
     grupo.ligas.forEach((liga) => {
-      const item = criarLeagueItem(grupo.apiCountry, liga.display);
-
+      countryLeagues.appendChild(criarLeagueItem(grupo.apiCountry, liga.display));
       if (filtroLigaSelecionada === getLeagueKey(grupo.apiCountry, liga.display)) {
         grupoTemLigaSelecionada = true;
       }
-
-      countryLeagues.appendChild(item);
     });
 
     if (grupoTemLigaSelecionada) {
@@ -536,15 +550,6 @@ function renderSidebar() {
       const estaVisivel = countryLeagues.style.display !== "none";
       countryLeagues.style.display = estaVisivel ? "none" : "flex";
       countryHeader.querySelector(".country-arrow").textContent = estaVisivel ? "▶" : "▼";
-
-      if (!estaVisivel) {
-        setTimeout(() => {
-          countryGroup.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest"
-          });
-        }, 120);
-      }
     });
 
     countryGroup.appendChild(countryHeader);
@@ -559,7 +564,6 @@ function criarLeagueItem(country, display) {
   item.className = "league-item";
 
   const key = getLeagueKey(country, display);
-
   if (filtroLigaSelecionada === key) {
     item.classList.add("active");
   }
@@ -579,7 +583,9 @@ function criarLeagueItem(country, display) {
     tabSelecionada = "all";
     renderSidebar();
     renderJogos();
-    matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+    if (matchDetails) {
+      matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+    }
   });
 
   item.querySelector(".favorite-btn").addEventListener("click", (e) => {
@@ -589,6 +595,8 @@ function criarLeagueItem(country, display) {
 
   return item;
 }
+
+/* -------------------- STATUS -------------------- */
 
 function traduzirEstado(statusShort, statusLong) {
   const mapa = {
@@ -658,6 +666,8 @@ function renderLiveIcon(jogo) {
   return `<span class="fixture-live-icon" title="Jogo em direto" aria-hidden="true"></span>`;
 }
 
+/* -------------------- ODDS + BELL -------------------- */
+
 function renderOddCell(value) {
   return `
     <div class="odd-box">
@@ -698,7 +708,7 @@ function renderBellButton(jogo) {
       aria-label="Ativar alertas do jogo"
       title="${ativo ? "Alertas ativos" : "Ativar alertas"}"
     >
-      ${ativo ? "🔔" : '<span class="fixture-bell-icon"></span>'}
+      <span class="fixture-bell-icon">${ativo ? "🔔" : ""}</span>
     </button>
   `;
 }
@@ -718,6 +728,8 @@ function renderOddsHeader() {
     </div>
   `;
 }
+
+/* -------------------- GAMES -------------------- */
 
 function agruparJogosPorLiga(jogos) {
   const grupos = {};
@@ -747,6 +759,8 @@ function agruparJogosPorLiga(jogos) {
 }
 
 function renderJogos() {
+  if (!gamesContainer) return;
+
   const jogosBase = getJogosPermitidos();
   const jogosFiltrados = filtrarPorTab(jogosBase);
 
@@ -864,6 +878,8 @@ function renderJogos() {
 }
 
 function renderTabs() {
+  if (!gamesContainer) return;
+
   const tabs = document.createElement("div");
   tabs.className = "games-tabs";
 
@@ -884,7 +900,9 @@ function renderTabs() {
         jogoSelecionadoId = null;
         renderSidebar();
         renderJogos();
-        matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+        if (matchDetails) {
+          matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+        }
         return;
       }
 
@@ -894,21 +912,29 @@ function renderTabs() {
         jogoSelecionadoId = null;
         renderSidebar();
         renderJogos();
-        matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+        if (matchDetails) {
+          matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+        }
         return;
       }
 
       tabSelecionada = novaTab;
       jogoSelecionadoId = null;
       renderJogos();
-      matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+      if (matchDetails) {
+        matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
+      }
     });
   });
 
   gamesContainer.appendChild(tabs);
 }
 
+/* -------------------- DETAILS -------------------- */
+
 async function renderDetalhes(jogo) {
+  if (!matchDetails) return;
+
   const statusCurto = jogo.fixture.status.short || "";
   const statusLongo = jogo.fixture.status.long || "";
   const minuto = jogo.fixture.status.elapsed || 0;
@@ -1041,7 +1067,40 @@ async function renderDetalhes(jogo) {
   `;
 }
 
-/* ALERTAS */
+function getStatValue(teamStats, statName) {
+  if (!teamStats || !teamStats.statistics) return 0;
+  const stat = teamStats.statistics.find((s) => s.type === statName);
+  if (!stat || stat.value === null || stat.value === undefined) return 0;
+  if (typeof stat.value === "string" && stat.value.includes("%")) {
+    return parseInt(stat.value.replace("%", ""), 10) || 0;
+  }
+  return Number(stat.value) || 0;
+}
+
+function calcularDominio(posseCasa, posseFora, rematesCasa, rematesFora, cantosCasa, cantosFora) {
+  const totalCasa = posseCasa + rematesCasa * 8 + cantosCasa * 4;
+  const totalFora = posseFora + rematesFora * 8 + cantosFora * 4;
+  const total = totalCasa + totalFora;
+
+  if (total === 0) return { home: 50, away: 50 };
+
+  return {
+    home: Math.round((totalCasa / total) * 100),
+    away: Math.round((totalFora / total) * 100),
+  };
+}
+
+function renderStatRow(label, homeValue, awayValue) {
+  return `
+    <div class="stat-row">
+      <div class="stat-home">${homeValue}</div>
+      <div class="stat-label">${label}</div>
+      <div class="stat-away">${awayValue}</div>
+    </div>
+  `;
+}
+
+/* -------------------- TOASTS -------------------- */
 
 function criarToastContainer() {
   if (document.getElementById("toastContainer")) return;
@@ -1070,6 +1129,8 @@ function mostrarToast(titulo, mensagem) {
     setTimeout(() => toast.remove(), 300);
   }, 4500);
 }
+
+/* -------------------- ALERTS -------------------- */
 
 function contarCartoesVermelhos(eventos) {
   return eventos.filter(
