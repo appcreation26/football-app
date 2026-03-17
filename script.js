@@ -625,7 +625,7 @@ function isJogoFinished(jogo) {
   return ["FT", "AET", "PEN"].includes(status);
 }
 
-function getTextoEstadoLinha(jogo) {
+function getTextoEstadoLinhaHtml(jogo) {
   const status = jogo.fixture.status.short || "";
   const statusLong = jogo.fixture.status.long || "";
   const minuto = jogo.fixture.status.elapsed;
@@ -638,7 +638,11 @@ function getTextoEstadoLinha(jogo) {
     return formatarHora(jogo.fixture.date);
   }
 
-  if (["FT", "AET", "PEN", "PST", "CANC", "ABD", "AWD", "WO", "INT", "SUSP"].includes(status)) {
+  if (status === "AET") {
+    return `Após<br>prolongamento`;
+  }
+
+  if (["FT", "PEN", "PST", "CANC", "ABD", "AWD", "WO", "INT", "SUSP"].includes(status)) {
     return traduzirEstado(status, statusLong);
   }
 
@@ -686,13 +690,16 @@ function renderOdds(jogo) {
 
 function renderBellButton(jogo) {
   const ativo = jogosComAlerta.includes(jogo.fixture.id);
+
   return `
     <button
       class="fixture-bell-btn ${ativo ? "active" : ""}"
       type="button"
       aria-label="Ativar alertas do jogo"
       title="${ativo ? "Alertas ativos" : "Ativar alertas"}"
-    ></button>
+    >
+      ${ativo ? "🔔" : '<span class="fixture-bell-icon"></span>'}
+    </button>
   `;
 }
 
@@ -809,7 +816,7 @@ function renderJogos() {
           <div class="fixture-left">
             <button class="fixture-favorite-btn" type="button">${jogoFavorito}</button>
             ${renderLiveIcon(jogo)}
-            <div class="fixture-status">${getTextoEstadoLinha(jogo)}</div>
+            <div class="fixture-status">${getTextoEstadoLinhaHtml(jogo)}</div>
           </div>
 
           <div class="fixture-teams">

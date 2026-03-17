@@ -242,9 +242,10 @@ body {
   border: none;
   color: #facc15;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 19px;
   padding: 0 4px;
   flex-shrink: 0;
+  line-height: 1;
 }
 
 .favorite-btn:hover {
@@ -344,7 +345,7 @@ body {
   border: none;
   color: #ffffff;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 21px;
   padding: 0;
   line-height: 1;
   flex-shrink: 0;
@@ -375,7 +376,7 @@ body {
 
 .odds-header-row {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr) 48px 178px 34px;
+  grid-template-columns: 126px minmax(0, 1fr) 48px 178px 34px;
   align-items: center;
   gap: 12px;
   padding: 0 12px 6px 12px;
@@ -397,7 +398,7 @@ body {
 
 .fixture-row {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr) 48px 178px 34px;
+  grid-template-columns: 126px minmax(0, 1fr) 48px 178px 34px;
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
@@ -416,8 +417,9 @@ body {
 
 .fixture-left {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
 }
 
 .fixture-favorite-btn {
@@ -425,12 +427,13 @@ body {
   border: none;
   color: #d6dde8;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 21px;
   padding: 0;
   line-height: 1;
-  width: 16px;
+  width: 20px;
   flex-shrink: 0;
   margin-right: 2px;
+  margin-top: 1px;
 }
 
 .fixture-favorite-btn:hover {
@@ -442,7 +445,8 @@ body {
   height: 15px;
   flex-shrink: 0;
   display: inline-block;
-  margin-right: 2px;
+  margin-right: 1px;
+  margin-top: 2px;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -461,7 +465,13 @@ body {
   color: #dbe4ef;
   font-weight: 700;
   min-width: 0;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.1;
+  word-break: break-word;
+}
+
+.fixture-status br {
+  line-height: 1.1;
 }
 
 .fixture-teams {
@@ -528,27 +538,37 @@ body {
 }
 
 .fixture-bell-btn {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border: none;
-  background-color: transparent;
-  background-image: url("./bell-icon.png");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
+  background: transparent;
   cursor: pointer;
-  opacity: 0.72;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  line-height: 1;
+  color: #ffffff;
 }
 
 .fixture-bell-btn:hover {
-  opacity: 1;
   transform: scale(1.06);
 }
 
 .fixture-bell-btn.active {
-  opacity: 1;
-  filter: drop-shadow(0 0 4px rgba(255,255,255,0.4));
+  color: #ffffff;
+}
+
+.fixture-bell-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  background-image: url("./bell-icon.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: brightness(0) saturate(100%) invert(100%);
 }
 
 /* TOASTS */
@@ -740,7 +760,7 @@ body {
 
   .fixture-row,
   .odds-header-row {
-    grid-template-columns: 108px minmax(0, 1fr) 40px 168px 30px;
+    grid-template-columns: 126px minmax(0, 1fr) 40px 168px 30px;
   }
 
   .odd-box,
