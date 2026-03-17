@@ -3,7 +3,7 @@ let todosOsJogos = [];
 let oddsPorJogo = {};
 let filtroLigaSelecionada = null;
 let jogoSelecionadoId = null;
-let tabSelecionada = "all"; // all | live | finished | favorites
+let tabSelecionada = "all";
 let ligasFechadas = JSON.parse(localStorage.getItem("ligasFechadas") || "[]");
 let jogosFavoritos = JSON.parse(localStorage.getItem("jogosFavoritos") || "[]");
 
@@ -333,6 +333,7 @@ function encontrarLigaConfig(country, display) {
 function getDisplayLeagueFromGame(jogo) {
   for (const grupo of MENU_LIGAS) {
     if (grupo.apiCountry !== jogo.league.country) continue;
+
     for (const liga of grupo.ligas) {
       if (liga.apiNames.includes(jogo.league.name)) {
         return {
@@ -539,7 +540,7 @@ function renderSidebar() {
   });
 }
 
-function criarLeagueItem(country, display, apiNames) {
+function criarLeagueItem(country, display) {
   const favoritas = getFavoritas();
   const item = document.createElement("div");
   item.className = "league-item";
@@ -631,11 +632,8 @@ function getTextoEstadoLinha(jogo) {
 }
 
 function renderLiveIcon(jogo) {
-  if (!isJogoLive(jogo)) {
-    return "";
-  }
-
-  return `<span class="fixture-live-icon" title="Jogo em direto"></span>`;
+  if (!isJogoLive(jogo)) return "";
+  return `<span class="fixture-live-icon" title="Jogo em direto" aria-hidden="true"></span>`;
 }
 
 function renderOddCell(value) {
@@ -718,10 +716,7 @@ function renderJogos() {
   renderTabs();
 
   if (jogosFiltrados.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "muted";
-    empty.textContent = "Sem jogos nesta categoria.";
-    gamesContainer.appendChild(empty);
+    gamesContainer.innerHTML += `<p class="muted">Sem jogos nesta categoria.</p>`;
     return;
   }
 
@@ -740,16 +735,14 @@ function renderJogos() {
     const headerKey = getLeagueKey(bloco.country, bloco.liga);
     const headerFavorita = favoritas.includes(headerKey) ? "★" : "☆";
     const estaFechada = ligasFechadas.includes(headerKey);
-    const seta = estaFechada ? "▾" : "▴";
 
     header.innerHTML = `
       <div class="league-section-left">
         <button class="league-header-favorite" type="button">${headerFavorita}</button>
-        ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo">` : ""}
+        ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo" alt="${bloco.liga}">` : ""}
         <span class="league-section-title">${bloco.grupo} ${bloco.liga}</span>
       </div>
-
-      <button class="league-toggle-btn" type="button">${seta}</button>
+      <button class="league-toggle-btn ${estaFechada ? "is-closed" : "is-open"}" type="button" aria-label="Abrir ou fechar jogos"></button>
     `;
 
     header.addEventListener("click", () => {
@@ -785,9 +778,7 @@ function renderJogos() {
           <div class="fixture-left">
             <button class="fixture-favorite-btn" type="button">${jogoFavorito}</button>
             ${renderLiveIcon(jogo)}
-            <div class="fixture-status">
-              ${getTextoEstadoLinha(jogo)}
-            </div>
+            <div class="fixture-status">${getTextoEstadoLinha(jogo)}</div>
           </div>
 
           <div class="fixture-teams">
@@ -843,18 +834,8 @@ function renderTabs() {
     btn.addEventListener("click", () => {
       const novaTab = btn.dataset.tab;
 
-      if (novaTab === "all") {
-        tabSelecionada = "all";
-        filtroLigaSelecionada = null;
-        jogoSelecionadoId = null;
-        renderSidebar();
-        renderJogos();
-        matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
-        return;
-      }
-
-      if (novaTab === "favorites") {
-        tabSelecionada = "favorites";
+      if (novaTab === "all" || novaTab === "favorites") {
+        tabSelecionada = novaTab;
         filtroLigaSelecionada = null;
         jogoSelecionadoId = null;
         renderSidebar();
@@ -911,21 +892,13 @@ async function renderDetalhes(jogo) {
   }
 
   const golos = eventos.filter((evento) => evento.type === "Goal");
-  const amarelos = eventos.filter(
-    (evento) => evento.type === "Card" && evento.detail === "Yellow Card"
-  );
+  const amarelos = eventos.filter((evento) => evento.type === "Card" && evento.detail === "Yellow Card");
   const vermelhos = eventos.filter(
-    (evento) =>
-      evento.type === "Card" &&
-      (evento.detail === "Red Card" || evento.detail === "Second Yellow card")
+    (evento) => evento.type === "Card" && (evento.detail === "Red Card" || evento.detail === "Second Yellow card")
   );
 
-  const homeStats = estatisticas.find(
-    (item) => item.team && item.team.id === jogo.teams.home.id
-  );
-  const awayStats = estatisticas.find(
-    (item) => item.team && item.team.id === jogo.teams.away.id
-  );
+  const homeStats = estatisticas.find((item) => item.team && item.team.id === jogo.teams.home.id);
+  const awayStats = estatisticas.find((item) => item.team && item.team.id === jogo.teams.away.id);
 
   const posseCasa = getStatValue(homeStats, "Ball Possession");
   const posseFora = getStatValue(awayStats, "Ball Possession");
@@ -936,14 +909,7 @@ async function renderDetalhes(jogo) {
   const faltasCasa = getStatValue(homeStats, "Fouls");
   const faltasFora = getStatValue(awayStats, "Fouls");
 
-  const dominio = calcularDominio(
-    posseCasa,
-    posseFora,
-    rematesBalizaCasa,
-    rematesBalizaFora,
-    cantosCasa,
-    cantosFora
-  );
+  const dominio = calcularDominio(posseCasa, posseFora, rematesBalizaCasa, rematesBalizaFora, cantosCasa, cantosFora);
 
   matchDetails.innerHTML = `
     <div class="details-card">
@@ -994,9 +960,7 @@ async function renderDetalhes(jogo) {
           <span>${dominio.home}%</span>
           <span>${dominio.away}%</span>
         </div>
-        <div class="muted small-note">
-          Estimado com base em posse, remates à baliza e cantos.
-        </div>
+        <div class="muted small-note">Estimado com base em posse, remates à baliza e cantos.</div>
       </div>
     </div>
 
@@ -1013,33 +977,21 @@ async function renderDetalhes(jogo) {
     <div class="details-card">
       <div class="details-title">Golos</div>
       <div class="details-meta">
-        ${
-          golos.length
-            ? golos.map(g => `<div>${g.time.elapsed}' • ${g.team.name} • ${g.player?.name || "Sem nome"}</div>`).join("")
-            : "<div>Sem golos registados.</div>"
-        }
+        ${golos.length ? golos.map(g => `<div>${g.time.elapsed}' • ${g.team.name} • ${g.player?.name || "Sem nome"}</div>`).join("") : "<div>Sem golos registados.</div>"}
       </div>
     </div>
 
     <div class="details-card">
       <div class="details-title">Cartões amarelos</div>
       <div class="details-meta">
-        ${
-          amarelos.length
-            ? amarelos.map(c => `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`).join("")
-            : "<div>Sem amarelos registados.</div>"
-        }
+        ${amarelos.length ? amarelos.map(c => `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`).join("") : "<div>Sem amarelos registados.</div>"}
       </div>
     </div>
 
     <div class="details-card">
       <div class="details-title">Cartões vermelhos</div>
       <div class="details-meta">
-        ${
-          vermelhos.length
-            ? vermelhos.map(c => `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`).join("")
-            : "<div>Sem vermelhos registados.</div>"
-        }
+        ${vermelhos.length ? vermelhos.map(c => `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`).join("") : "<div>Sem vermelhos registados.</div>"}
       </div>
     </div>
   `;
@@ -1049,17 +1001,15 @@ function getStatValue(teamStats, statName) {
   if (!teamStats || !teamStats.statistics) return 0;
   const stat = teamStats.statistics.find((s) => s.type === statName);
   if (!stat || stat.value === null || stat.value === undefined) return 0;
-
   if (typeof stat.value === "string" && stat.value.includes("%")) {
     return parseInt(stat.value.replace("%", ""), 10) || 0;
   }
-
   return Number(stat.value) || 0;
 }
 
 function calcularDominio(posseCasa, posseFora, rematesCasa, rematesFora, cantosCasa, cantosFora) {
-  const totalCasa = (posseCasa * 1) + (rematesCasa * 8) + (cantosCasa * 4);
-  const totalFora = (posseFora * 1) + (rematesFora * 8) + (cantosFora * 4);
+  const totalCasa = posseCasa + rematesCasa * 8 + cantosCasa * 4;
+  const totalFora = posseFora + rematesFora * 8 + cantosFora * 4;
   const total = totalCasa + totalFora;
 
   if (total === 0) return { home: 50, away: 50 };

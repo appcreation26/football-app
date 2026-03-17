@@ -317,19 +317,30 @@ body {
 }
 
 .league-toggle-btn {
-  background: transparent;
-  border: none;
-  color: #ffffff;
-  cursor: pointer;
-  font-size: 18px;
-  padding: 0;
   width: 18px;
-  line-height: 1;
+  height: 18px;
+  border: none;
+  padding: 0;
+  background-color: transparent;
+  background-image: url("./arrow-toggle.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  cursor: pointer;
   flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.league-toggle-btn.is-open {
+  transform: rotate(0deg);
+}
+
+.league-toggle-btn.is-closed {
+  transform: rotate(180deg);
 }
 
 .league-toggle-btn:hover {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .league-header-favorite {
@@ -444,15 +455,9 @@ body {
 }
 
 @keyframes blinkLiveIcon {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.25;
-  }
-  100% {
-    opacity: 1;
-  }
+  0% { opacity: 1; }
+  50% { opacity: 0.25; }
+  100% { opacity: 1; }
 }
 
 .fixture-status {
@@ -506,10 +511,6 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 6px;
-}
-
-.empty-odds {
-  min-height: 32px;
 }
 
 .odd-box {
