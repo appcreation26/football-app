@@ -376,7 +376,7 @@ body {
 
 .odds-header-row {
   display: grid;
-  grid-template-columns: 126px minmax(0, 1fr) 48px 178px 36px;
+  grid-template-columns: 126px minmax(0, 1fr) 48px 178px 38px;
   align-items: center;
   gap: 12px;
   padding: 0 12px 6px 12px;
@@ -398,7 +398,7 @@ body {
 
 .fixture-row {
   display: grid;
-  grid-template-columns: 126px minmax(0, 1fr) 48px 178px 36px;
+  grid-template-columns: 126px minmax(0, 1fr) 48px 178px 38px;
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
@@ -557,25 +557,14 @@ body {
   width: 22px;
   height: 22px;
   display: inline-block;
-  background-image: url("./bell-icon.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  filter: brightness(0) saturate(100%) invert(100%);
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.5c-2.4 0-4 1.7-4 4.5v1.6c0 .9-.2 1.8-.7 2.5l-1.2 1.8c-.4.6 0 1.6.8 1.6h10.2c.8 0 1.2-1 .8-1.6l-1.2-1.8c-.5-.7-.7-1.6-.7-2.5V8c0-2.8-1.6-4.5-4-4.5Z' fill='none' stroke='%23ffffff' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.5 18.2a1.5 1.5 0 0 0 3 0' fill='none' stroke='%23ffffff' stroke-width='1.9' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 .fixture-bell-btn.active .fixture-bell-icon {
-  background-color: #ffffff;
-  -webkit-mask-image: url("./bell-icon.png");
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  -webkit-mask-size: contain;
-  mask-image: url("./bell-icon.png");
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
-  background-image: none;
-  filter: none;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.5c-2.4 0-4 1.7-4 4.5v1.6c0 .9-.2 1.8-.7 2.5l-1.2 1.8c-.4.6 0 1.6.8 1.6h10.2c.8 0 1.2-1 .8-1.6l-1.2-1.8c-.5-.7-.7-1.6-.7-2.5V8c0-2.8-1.6-4.5-4-4.5Z' fill='%23ffffff' stroke='%23ffffff' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.5 18.2a1.5 1.5 0 0 0 3 0' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 /* TOASTS */
