@@ -200,7 +200,7 @@ atualizarLabelData();
 mostrarJogos();
 iniciarMonitorizacaoAlertas();
 
-/* -------------------- STORAGE -------------------- */
+/* STORAGE */
 
 function guardarLigasFechadas() {
   localStorage.setItem("ligasFechadas", JSON.stringify(ligasFechadas));
@@ -218,7 +218,7 @@ function guardarEstadoAlertasJogos() {
   localStorage.setItem("estadoAlertasJogos", JSON.stringify(estadoAlertasJogos));
 }
 
-/* -------------------- DATE -------------------- */
+/* DATE */
 
 function formatarDataAPI(data) {
   const ano = data.getFullYear();
@@ -287,7 +287,7 @@ function irHoje() {
   mostrarJogos();
 }
 
-/* -------------------- FAVORITAS -------------------- */
+/* FAVORITAS */
 
 function getLeagueKey(country, display) {
   return `${country}|||${display}`;
@@ -332,7 +332,7 @@ function toggleJogoFavorito(idJogo) {
   renderJogos();
 }
 
-/* -------------------- LEAGUES -------------------- */
+/* LEAGUES */
 
 function toggleLigaFechada(key) {
   if (ligasFechadas.includes(key)) {
@@ -418,7 +418,7 @@ function filtrarPorTab(jogos) {
   return jogos;
 }
 
-/* -------------------- API -------------------- */
+/* API */
 
 async function carregarOddsFixas(jogos) {
   const ids = jogos.map((jogo) => jogo.fixture.id).filter(Boolean);
@@ -469,7 +469,7 @@ async function mostrarJogos() {
   }
 }
 
-/* -------------------- SIDEBAR -------------------- */
+/* SIDEBAR */
 
 function renderSidebar() {
   if (!leagueList) return;
@@ -596,7 +596,7 @@ function criarLeagueItem(country, display) {
   return item;
 }
 
-/* -------------------- STATUS -------------------- */
+/* STATUS */
 
 function traduzirEstado(statusShort, statusLong) {
   const mapa = {
@@ -666,7 +666,7 @@ function renderLiveIcon(jogo) {
   return `<span class="fixture-live-icon" title="Jogo em direto" aria-hidden="true"></span>`;
 }
 
-/* -------------------- ODDS + BELL -------------------- */
+/* ODDS + BELL */
 
 function renderOddCell(value) {
   return `
@@ -708,7 +708,7 @@ function renderBellButton(jogo) {
       aria-label="Ativar alertas do jogo"
       title="${ativo ? "Alertas ativos" : "Ativar alertas"}"
     >
-      <span class="fixture-bell-icon">${ativo ? "🔔" : ""}</span>
+      <span class="fixture-bell-icon"></span>
     </button>
   `;
 }
@@ -729,7 +729,7 @@ function renderOddsHeader() {
   `;
 }
 
-/* -------------------- GAMES -------------------- */
+/* GAMES */
 
 function agruparJogosPorLiga(jogos) {
   const grupos = {};
@@ -930,7 +930,7 @@ function renderTabs() {
   gamesContainer.appendChild(tabs);
 }
 
-/* -------------------- DETAILS -------------------- */
+/* DETAILS */
 
 async function renderDetalhes(jogo) {
   if (!matchDetails) return;
@@ -1100,7 +1100,7 @@ function renderStatRow(label, homeValue, awayValue) {
   `;
 }
 
-/* -------------------- TOASTS -------------------- */
+/* TOASTS */
 
 function criarToastContainer() {
   if (document.getElementById("toastContainer")) return;
@@ -1130,7 +1130,7 @@ function mostrarToast(titulo, mensagem) {
   }, 4500);
 }
 
-/* -------------------- ALERTS -------------------- */
+/* ALERTS */
 
 function contarCartoesVermelhos(eventos) {
   return eventos.filter(
