@@ -1127,17 +1127,37 @@ function mostrarToast(titulo, mensagem) {
   setTimeout(() => {
     toast.classList.add("hide");
     setTimeout(() => toast.remove(), 300);
-  }, 4500);
+  }, 5000);
 }
 
 /* ALERTS */
 
-function contarCartoesVermelhos(eventos) {
-  return eventos.filter(
-    (evento) =>
-      evento.type === "Card" &&
-      (evento.detail === "Red Card" || evento.detail === "Second Yellow card")
-  ).length;
+function contarEventos(eventos, filtroFn) {
+  return eventos.filter(filtroFn).length;
+}
+
+function getContagemEventos(eventos) {
+  return {
+    amarelos: contarEventos(eventos, (e) => e.type === "Card" && e.detail === "Yellow Card"),
+    vermelhos: contarEventos(
+      eventos,
+      (e) => e.type === "Card" && (e.detail === "Red Card" || e.detail === "Second Yellow card")
+    ),
+    penaltisFalhados: contarEventos(
+      eventos,
+      (e) =>
+        e.type === "Goal" &&
+        typeof e.detail === "string" &&
+        e.detail.toLowerCase().includes("missed penalty")
+    ),
+    lesoes: contarEventos(
+      eventos,
+      (e) =>
+        (e.type === "subst" && typeof e.detail === "string" && e.detail.toLowerCase().includes("injury")) ||
+        (typeof e.comments === "string" && e.comments.toLowerCase().includes("injury")) ||
+        (typeof e.detail === "string" && e.detail.toLowerCase().includes("injury"))
+    )
+  };
 }
 
 async function obterEventosJogo(idJogo) {
@@ -1153,6 +1173,7 @@ async function obterEventosJogo(idJogo) {
 
 async function criarEstadoInicialAlerta(jogo) {
   const eventos = await obterEventosJogo(jogo.fixture.id);
+  const contagens = getContagemEventos(eventos);
 
   return {
     id: jogo.fixture.id,
@@ -1161,7 +1182,10 @@ async function criarEstadoInicialAlerta(jogo) {
     homeGoals: Number(jogo.goals.home ?? 0),
     awayGoals: Number(jogo.goals.away ?? 0),
     statusShort: jogo.fixture.status.short || "",
-    redCards: contarCartoesVermelhos(eventos)
+    amarelos: contagens.amarelos,
+    vermelhos: contagens.vermelhos,
+    penaltisFalhados: contagens.penaltisFalhados,
+    lesoes: contagens.lesoes
   };
 }
 
@@ -1224,7 +1248,7 @@ async function verificarAlertasJogos() {
       const atualAwayGoals = Number(jogo.goals.away ?? 0);
 
       if (["NS", "TBD"].includes(anterior.statusShort) && isJogoLive(jogo)) {
-        mostrarToast("Jogo começou", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
+        mostrarToast("Início do jogo", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
       }
 
       if (anterior.statusShort !== "HT" && atualStatus === "HT") {
@@ -1243,10 +1267,22 @@ async function verificarAlertasJogos() {
       }
 
       const eventos = await obterEventosJogo(id);
-      const vermelhosAtuais = contarCartoesVermelhos(eventos);
+      const contagens = getContagemEventos(eventos);
 
-      if (vermelhosAtuais > Number(anterior.redCards || 0)) {
+      if (contagens.amarelos > Number(anterior.amarelos || 0)) {
+        mostrarToast("Cartão amarelo", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
+      }
+
+      if (contagens.vermelhos > Number(anterior.vermelhos || 0)) {
         mostrarToast("Cartão vermelho", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
+      }
+
+      if (contagens.penaltisFalhados > Number(anterior.penaltisFalhados || 0)) {
+        mostrarToast("Penálti falhado", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
+      }
+
+      if (contagens.lesoes > Number(anterior.lesoes || 0)) {
+        mostrarToast("Jogador lesionado", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
       }
 
       estadoAlertasJogos[id] = {
@@ -1256,7 +1292,10 @@ async function verificarAlertasJogos() {
         homeGoals: atualHomeGoals,
         awayGoals: atualAwayGoals,
         statusShort: atualStatus,
-        redCards: vermelhosAtuais
+        amarelos: contagens.amarelos,
+        vermelhos: contagens.vermelhos,
+        penaltisFalhados: contagens.penaltisFalhados,
+        lesoes: contagens.lesoes
       };
     }
 
