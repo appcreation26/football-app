@@ -1,6 +1,7 @@
+const MODO_DADOS = "demo"; // "demo" ou "api"
+
 let dataSelecionada = new Date();
 let todosOsJogos = [];
-let oddsPorJogo = {};
 let filtroLigaSelecionada = null;
 let jogoSelecionadoId = null;
 let tabSelecionada = "all";
@@ -8,8 +9,10 @@ let tabSelecionada = "all";
 let ligasFechadas = JSON.parse(localStorage.getItem("ligasFechadas") || "[]");
 let jogosFavoritos = JSON.parse(localStorage.getItem("jogosFavoritos") || "[]");
 let jogosComAlerta = JSON.parse(localStorage.getItem("jogosComAlerta") || "[]");
-let estadoAlertasJogos = JSON.parse(localStorage.getItem("estadoAlertasJogos") || "{}");
-let intervaloAlertas = null;
+let snapshotJogos = JSON.parse(localStorage.getItem("snapshotJogos") || "{}");
+
+const cacheJogosPorData = {};
+const CACHE_TTL_MS = 10 * 60 * 1000;
 
 const MENU_LIGAS = [
   {
@@ -191,14 +194,13 @@ const loadBtn = document.getElementById("loadBtn");
 const currentDateLabel = document.getElementById("currentDateLabel");
 
 if (loadBtn) {
-  loadBtn.addEventListener("click", mostrarJogos);
+  loadBtn.addEventListener("click", () => mostrarJogos(true));
 }
 
 criarToastContainer();
 renderSidebar();
 atualizarLabelData();
 mostrarJogos();
-iniciarMonitorizacaoAlertas();
 
 /* STORAGE */
 
@@ -214,8 +216,14 @@ function guardarJogosComAlerta() {
   localStorage.setItem("jogosComAlerta", JSON.stringify(jogosComAlerta));
 }
 
-function guardarEstadoAlertasJogos() {
-  localStorage.setItem("estadoAlertasJogos", JSON.stringify(estadoAlertasJogos));
+function guardarSnapshotJogos() {
+  localStorage.setItem("snapshotJogos", JSON.stringify(snapshotJogos));
+}
+
+/* CACHE */
+
+function cacheValido(entry) {
+  return entry && Date.now() - entry.timestamp < CACHE_TTL_MS;
 }
 
 /* DATE */
@@ -264,7 +272,7 @@ function diaAnterior() {
   tabSelecionada = "all";
   atualizarLabelData();
   renderSidebar();
-  mostrarJogos();
+  mostrarJogos(true);
 }
 
 function diaSeguinte() {
@@ -274,7 +282,7 @@ function diaSeguinte() {
   tabSelecionada = "all";
   atualizarLabelData();
   renderSidebar();
-  mostrarJogos();
+  mostrarJogos(true);
 }
 
 function irHoje() {
@@ -284,7 +292,7 @@ function irHoje() {
   tabSelecionada = "all";
   atualizarLabelData();
   renderSidebar();
-  mostrarJogos();
+  mostrarJogos(true);
 }
 
 /* FAVORITAS */
@@ -329,6 +337,90 @@ function toggleJogoFavorito(idJogo) {
     jogosFavoritos.push(idJogo);
   }
   guardarJogosFavoritos();
+  renderJogos();
+}
+
+/* ALERTAS MANUAIS */
+
+function criarSnapshotJogo(jogo) {
+  return {
+    id: jogo.fixture.id,
+    statusShort: jogo.fixture.status.short || "",
+    homeGoals: Number(jogo.goals.home ?? 0),
+    awayGoals: Number(jogo.goals.away ?? 0),
+    homeName: jogo.teams.home.name,
+    awayName: jogo.teams.away.name
+  };
+}
+
+function isJogoLive(jogo) {
+  const status = jogo.fixture.status.short || "";
+  return ["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(status);
+}
+
+function isJogoFinished(jogo) {
+  const status = jogo.fixture.status.short || "";
+  return ["FT", "AET", "PEN"].includes(status);
+}
+
+function processarAlertasManuais(jogosNovos) {
+  if (!Array.isArray(jogosNovos) || jogosNovos.length === 0) return;
+
+  jogosNovos.forEach((jogo) => {
+    if (!jogosComAlerta.includes(jogo.fixture.id)) return;
+
+    const novo = criarSnapshotJogo(jogo);
+    const anterior = snapshotJogos[jogo.fixture.id];
+
+    if (!anterior) {
+      snapshotJogos[jogo.fixture.id] = novo;
+      return;
+    }
+
+    if (["NS", "TBD"].includes(anterior.statusShort) && isJogoLive(jogo)) {
+      mostrarToast("Início do jogo", `${novo.homeName} x ${novo.awayName}`);
+    }
+
+    if (anterior.statusShort !== "HT" && novo.statusShort === "HT") {
+      mostrarToast("Intervalo", `${novo.homeName} ${novo.homeGoals} - ${novo.awayGoals} ${novo.awayName}`);
+    }
+
+    if (!["FT", "AET", "PEN"].includes(anterior.statusShort) && isJogoFinished(jogo)) {
+      mostrarToast("Fim do jogo", `${novo.homeName} ${novo.homeGoals} - ${novo.awayGoals} ${novo.awayName}`);
+      jogosComAlerta = jogosComAlerta.filter((id) => id !== jogo.fixture.id);
+      guardarJogosComAlerta();
+    }
+
+    const totalAnterior = Number(anterior.homeGoals) + Number(anterior.awayGoals);
+    const totalNovo = Number(novo.homeGoals) + Number(novo.awayGoals);
+
+    if (totalNovo > totalAnterior) {
+      mostrarToast("Golo", `${novo.homeName} ${novo.homeGoals} - ${novo.awayGoals} ${novo.awayName}`);
+    }
+
+    snapshotJogos[jogo.fixture.id] = novo;
+  });
+
+  guardarSnapshotJogos();
+}
+
+async function toggleAlertaJogo(jogo) {
+  const id = jogo.fixture.id;
+
+  if (jogosComAlerta.includes(id)) {
+    jogosComAlerta = jogosComAlerta.filter((item) => item !== id);
+    delete snapshotJogos[id];
+    guardarJogosComAlerta();
+    guardarSnapshotJogos();
+    mostrarToast("Alertas desativados", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
+  } else {
+    jogosComAlerta.push(id);
+    snapshotJogos[id] = criarSnapshotJogo(jogo);
+    guardarJogosComAlerta();
+    guardarSnapshotJogos();
+    mostrarToast("Alertas ativados", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
+  }
+
   renderJogos();
 }
 
@@ -418,48 +510,78 @@ function filtrarPorTab(jogos) {
   return jogos;
 }
 
-/* API */
+/* DADOS */
 
-async function carregarOddsFixas(jogos) {
-  const ids = jogos.map((jogo) => jogo.fixture.id).filter(Boolean);
-
-  if (ids.length === 0) {
-    oddsPorJogo = {};
-    return;
-  }
-
-  try {
-    const resposta = await fetch(`/api/odds?ids=${ids.join(",")}`);
-    const dados = await resposta.json();
-    oddsPorJogo = dados.response || {};
-  } catch (erro) {
-    console.error("Erro ao carregar odds:", erro);
-    oddsPorJogo = {};
-  }
+async function obterJogosDemo() {
+  const modulo = await import("./demo/matches.js");
+  const lista = Array.isArray(modulo.demoMatches) ? modulo.demoMatches : [];
+  return JSON.parse(JSON.stringify(lista));
 }
 
-async function mostrarJogos() {
+function aplicarDataDemo(lista) {
+  const dataBase = formatarDataAPI(dataSelecionada);
+
+  return lista.map((jogo, index) => {
+    const horaOriginal = new Date(jogo.fixture.date);
+    const hora = String(horaOriginal.getUTCHours()).padStart(2, "0");
+    const minuto = String(horaOriginal.getUTCMinutes()).padStart(2, "0");
+
+    return {
+      ...jogo,
+      fixture: {
+        ...jogo.fixture,
+        id: Number(`${dataBase.replaceAll("-", "")}${index + 1}`),
+        date: `${dataBase}T${hora}:${minuto}:00+00:00`
+      }
+    };
+  });
+}
+
+async function mostrarJogos(force = false) {
   if (gamesContainer) {
     gamesContainer.innerHTML = `<p class="muted">🔄 A carregar jogos...</p>`;
   }
-  if (matchDetails) {
+  if (matchDetails && !jogoSelecionadoId) {
     matchDetails.innerHTML = `<p class="muted">Seleciona um jogo na coluna central.</p>`;
   }
 
   try {
     const dataAPI = formatarDataAPI(dataSelecionada);
-    const resposta = await fetch(`/api/games?date=${dataAPI}`);
-    const dados = await resposta.json();
 
-    if (!dados.response || !Array.isArray(dados.response) || dados.response.length === 0) {
-      todosOsJogos = [];
-      oddsPorJogo = {};
+    if (!force && cacheValido(cacheJogosPorData[dataAPI])) {
+      todosOsJogos = cacheJogosPorData[dataAPI].data;
       renderJogos();
       return;
     }
 
-    todosOsJogos = dados.response;
-    await carregarOddsFixas(todosOsJogos);
+    let jogosRecebidos = [];
+
+    if (MODO_DADOS === "demo") {
+      const demoBase = await obterJogosDemo();
+      jogosRecebidos = aplicarDataDemo(demoBase);
+    } else {
+      const resposta = await fetch(`/api/games?date=${dataAPI}`);
+      const dados = await resposta.json();
+      jogosRecebidos = Array.isArray(dados.response) ? dados.response : [];
+    }
+
+    if (!jogosRecebidos.length) {
+      todosOsJogos = [];
+      cacheJogosPorData[dataAPI] = {
+        timestamp: Date.now(),
+        data: []
+      };
+      renderJogos();
+      return;
+    }
+
+    todosOsJogos = jogosRecebidos;
+    cacheJogosPorData[dataAPI] = {
+      timestamp: Date.now(),
+      data: todosOsJogos
+    };
+
+    processarAlertasManuais(todosOsJogos);
     renderJogos();
   } catch (erro) {
     console.error("Erro ao carregar jogos:", erro);
@@ -623,16 +745,6 @@ function traduzirEstado(statusShort, statusLong) {
   return statusLong || statusShort || "-";
 }
 
-function isJogoLive(jogo) {
-  const status = jogo.fixture.status.short || "";
-  return ["1H", "2H", "HT", "ET", "BT", "P", "LIVE"].includes(status);
-}
-
-function isJogoFinished(jogo) {
-  const status = jogo.fixture.status.short || "";
-  return ["FT", "AET", "PEN"].includes(status);
-}
-
 function getTextoEstadoLinhaHtml(jogo) {
   const status = jogo.fixture.status.short || "";
   const statusLong = jogo.fixture.status.long || "";
@@ -666,7 +778,7 @@ function renderLiveIcon(jogo) {
   return `<span class="fixture-live-icon" title="Jogo em direto" aria-hidden="true"></span>`;
 }
 
-/* ODDS + BELL */
+/* ODDS LOCAIS */
 
 function renderOddCell(value) {
   return `
@@ -676,24 +788,12 @@ function renderOddCell(value) {
   `;
 }
 
-function renderOdds(jogo) {
-  const odds = oddsPorJogo[jogo.fixture.id];
-
-  if (!odds) {
-    return `
-      <div class="fixture-odds">
-        ${renderOddCell("-")}
-        ${renderOddCell("-")}
-        ${renderOddCell("-")}
-      </div>
-    `;
-  }
-
+function renderOdds() {
   return `
     <div class="fixture-odds">
-      ${renderOddCell(odds.home)}
-      ${renderOddCell(odds.draw)}
-      ${renderOddCell(odds.away)}
+      ${renderOddCell("-")}
+      ${renderOddCell("-")}
+      ${renderOddCell("-")}
     </div>
   `;
 }
@@ -849,14 +949,14 @@ function renderJogos() {
             <div>${jogo.goals.away ?? "-"}</div>
           </div>
 
-          ${renderOdds(jogo)}
+          ${renderOdds()}
           ${renderBellButton(jogo)}
         `;
 
-        row.addEventListener("click", async () => {
+        row.addEventListener("click", () => {
           jogoSelecionadoId = jogo.fixture.id;
           renderJogos();
-          await renderDetalhes(jogo);
+          renderDetalhes(jogo);
         });
 
         row.querySelector(".fixture-favorite-btn").addEventListener("click", (e) => {
@@ -930,9 +1030,9 @@ function renderTabs() {
   gamesContainer.appendChild(tabs);
 }
 
-/* DETAILS */
+/* DETAILS - SEM API EXTRA */
 
-async function renderDetalhes(jogo) {
+function renderDetalhes(jogo) {
   if (!matchDetails) return;
 
   const statusCurto = jogo.fixture.status.short || "";
@@ -940,46 +1040,7 @@ async function renderDetalhes(jogo) {
   const minuto = jogo.fixture.status.elapsed || 0;
   const estadio = jogo.fixture.venue?.name || "Sem estádio disponível";
   const cidade = jogo.fixture.venue?.city || "Sem cidade disponível";
-
-  matchDetails.innerHTML = `<p class="muted">🔄 A carregar detalhes do jogo...</p>`;
-
-  let eventos = [];
-  let estatisticas = [];
-
-  try {
-    const [eventosRes, statsRes] = await Promise.all([
-      fetch(`/api/fixture-details?id=${jogo.fixture.id}`),
-      fetch(`/api/fixture-stats?id=${jogo.fixture.id}`),
-    ]);
-
-    const eventosData = await eventosRes.json();
-    const statsData = await statsRes.json();
-
-    eventos = eventosData.response || [];
-    estatisticas = statsData.response || [];
-  } catch (error) {
-    console.error("Erro ao carregar detalhes:", error);
-  }
-
-  const golos = eventos.filter((evento) => evento.type === "Goal");
-  const amarelos = eventos.filter((evento) => evento.type === "Card" && evento.detail === "Yellow Card");
-  const vermelhos = eventos.filter(
-    (evento) => evento.type === "Card" && (evento.detail === "Red Card" || evento.detail === "Second Yellow card")
-  );
-
-  const homeStats = estatisticas.find((item) => item.team && item.team.id === jogo.teams.home.id);
-  const awayStats = estatisticas.find((item) => item.team && item.team.id === jogo.teams.away.id);
-
-  const posseCasa = getStatValue(homeStats, "Ball Possession");
-  const posseFora = getStatValue(awayStats, "Ball Possession");
-  const rematesBalizaCasa = getStatValue(homeStats, "Shots on Goal");
-  const rematesBalizaFora = getStatValue(awayStats, "Shots on Goal");
-  const cantosCasa = getStatValue(homeStats, "Corner Kicks");
-  const cantosFora = getStatValue(awayStats, "Corner Kicks");
-  const faltasCasa = getStatValue(homeStats, "Fouls");
-  const faltasFora = getStatValue(awayStats, "Fouls");
-
-  const dominio = calcularDominio(posseCasa, posseFora, rematesBalizaCasa, rematesBalizaFora, cantosCasa, cantosFora);
+  const arbitro = jogo.fixture.referee || "Sem informação";
 
   matchDetails.innerHTML = `
     <div class="details-card">
@@ -998,12 +1059,13 @@ async function renderDetalhes(jogo) {
     </div>
 
     <div class="details-card">
-      <div class="details-title">Estado</div>
+      <div class="details-title">Informação do jogo</div>
       <div class="details-meta">
         <div><span class="status-live">${statusCurto}</span> • ${statusLongo}</div>
-        <div>Minuto: ${minuto}'</div>
+        <div>Minuto: ${minuto ? `${minuto}'` : "-"}</div>
         <div>Liga: ${jogo.league.name}</div>
         <div>Data: ${formatarDataHora(jogo.fixture.date)}</div>
+        <div>Árbitro: ${arbitro}</div>
       </div>
     </div>
 
@@ -1016,86 +1078,17 @@ async function renderDetalhes(jogo) {
     </div>
 
     <div class="details-card">
-      <div class="details-title">Domínio estimado</div>
+      <div class="details-title">Resultado ao intervalo</div>
       <div class="details-meta">
-        <div class="dominance-labels">
-          <span>${jogo.teams.home.name}</span>
-          <span>${jogo.teams.away.name}</span>
-        </div>
-        <div class="dominance-bar">
-          <div class="dominance-home" style="width: ${dominio.home}%"></div>
-          <div class="dominance-away" style="width: ${dominio.away}%"></div>
-        </div>
-        <div class="dominance-values">
-          <span>${dominio.home}%</span>
-          <span>${dominio.away}%</span>
-        </div>
-        <div class="muted small-note">Estimado com base em posse, remates à baliza e cantos.</div>
+        <div>${jogo.score?.halftime?.home ?? "-"} - ${jogo.score?.halftime?.away ?? "-"}</div>
       </div>
     </div>
 
     <div class="details-card">
-      <div class="details-title">Estatísticas</div>
-      <div class="stats-table">
-        ${renderStatRow("Posse de bola", posseCasa, posseFora)}
-        ${renderStatRow("Remates à baliza", rematesBalizaCasa, rematesBalizaFora)}
-        ${renderStatRow("Cantos", cantosCasa, cantosFora)}
-        ${renderStatRow("Faltas", faltasCasa, faltasFora)}
-      </div>
-    </div>
-
-    <div class="details-card">
-      <div class="details-title">Golos</div>
+      <div class="details-title">Resultado final</div>
       <div class="details-meta">
-        ${golos.length ? golos.map(g => `<div>${g.time.elapsed}' • ${g.team.name} • ${g.player?.name || "Sem nome"}</div>`).join("") : "<div>Sem golos registados.</div>"}
+        <div>${jogo.score?.fulltime?.home ?? "-"} - ${jogo.score?.fulltime?.away ?? "-"}</div>
       </div>
-    </div>
-
-    <div class="details-card">
-      <div class="details-title">Cartões amarelos</div>
-      <div class="details-meta">
-        ${amarelos.length ? amarelos.map(c => `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`).join("") : "<div>Sem amarelos registados.</div>"}
-      </div>
-    </div>
-
-    <div class="details-card">
-      <div class="details-title">Cartões vermelhos</div>
-      <div class="details-meta">
-        ${vermelhos.length ? vermelhos.map(c => `<div>${c.time.elapsed}' • ${c.team.name} • ${c.player?.name || "Sem nome"}</div>`).join("") : "<div>Sem vermelhos registados.</div>"}
-      </div>
-    </div>
-  `;
-}
-
-function getStatValue(teamStats, statName) {
-  if (!teamStats || !teamStats.statistics) return 0;
-  const stat = teamStats.statistics.find((s) => s.type === statName);
-  if (!stat || stat.value === null || stat.value === undefined) return 0;
-  if (typeof stat.value === "string" && stat.value.includes("%")) {
-    return parseInt(stat.value.replace("%", ""), 10) || 0;
-  }
-  return Number(stat.value) || 0;
-}
-
-function calcularDominio(posseCasa, posseFora, rematesCasa, rematesFora, cantosCasa, cantosFora) {
-  const totalCasa = posseCasa + rematesCasa * 8 + cantosCasa * 4;
-  const totalFora = posseFora + rematesFora * 8 + cantosFora * 4;
-  const total = totalCasa + totalFora;
-
-  if (total === 0) return { home: 50, away: 50 };
-
-  return {
-    home: Math.round((totalCasa / total) * 100),
-    away: Math.round((totalFora / total) * 100),
-  };
-}
-
-function renderStatRow(label, homeValue, awayValue) {
-  return `
-    <div class="stat-row">
-      <div class="stat-home">${homeValue}</div>
-      <div class="stat-label">${label}</div>
-      <div class="stat-away">${awayValue}</div>
     </div>
   `;
 }
@@ -1128,179 +1121,4 @@ function mostrarToast(titulo, mensagem) {
     toast.classList.add("hide");
     setTimeout(() => toast.remove(), 300);
   }, 5000);
-}
-
-/* ALERTS */
-
-function contarEventos(eventos, filtroFn) {
-  return eventos.filter(filtroFn).length;
-}
-
-function getContagemEventos(eventos) {
-  return {
-    amarelos: contarEventos(eventos, (e) => e.type === "Card" && e.detail === "Yellow Card"),
-    vermelhos: contarEventos(
-      eventos,
-      (e) => e.type === "Card" && (e.detail === "Red Card" || e.detail === "Second Yellow card")
-    ),
-    penaltisFalhados: contarEventos(
-      eventos,
-      (e) =>
-        e.type === "Goal" &&
-        typeof e.detail === "string" &&
-        e.detail.toLowerCase().includes("missed penalty")
-    ),
-    lesoes: contarEventos(
-      eventos,
-      (e) =>
-        (e.type === "subst" && typeof e.detail === "string" && e.detail.toLowerCase().includes("injury")) ||
-        (typeof e.comments === "string" && e.comments.toLowerCase().includes("injury")) ||
-        (typeof e.detail === "string" && e.detail.toLowerCase().includes("injury"))
-    )
-  };
-}
-
-async function obterEventosJogo(idJogo) {
-  try {
-    const resposta = await fetch(`/api/fixture-details?id=${idJogo}`);
-    const dados = await resposta.json();
-    return dados.response || [];
-  } catch (erro) {
-    console.error("Erro ao obter eventos do jogo:", erro);
-    return [];
-  }
-}
-
-async function criarEstadoInicialAlerta(jogo) {
-  const eventos = await obterEventosJogo(jogo.fixture.id);
-  const contagens = getContagemEventos(eventos);
-
-  return {
-    id: jogo.fixture.id,
-    homeName: jogo.teams.home.name,
-    awayName: jogo.teams.away.name,
-    homeGoals: Number(jogo.goals.home ?? 0),
-    awayGoals: Number(jogo.goals.away ?? 0),
-    statusShort: jogo.fixture.status.short || "",
-    amarelos: contagens.amarelos,
-    vermelhos: contagens.vermelhos,
-    penaltisFalhados: contagens.penaltisFalhados,
-    lesoes: contagens.lesoes
-  };
-}
-
-async function toggleAlertaJogo(jogo) {
-  const id = jogo.fixture.id;
-
-  if (jogosComAlerta.includes(id)) {
-    jogosComAlerta = jogosComAlerta.filter((item) => item !== id);
-    delete estadoAlertasJogos[id];
-    guardarJogosComAlerta();
-    guardarEstadoAlertasJogos();
-    mostrarToast("Alertas desativados", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
-  } else {
-    jogosComAlerta.push(id);
-    estadoAlertasJogos[id] = await criarEstadoInicialAlerta(jogo);
-    guardarJogosComAlerta();
-    guardarEstadoAlertasJogos();
-    mostrarToast("Alertas ativados", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
-  }
-
-  renderJogos();
-  iniciarMonitorizacaoAlertas();
-}
-
-function iniciarMonitorizacaoAlertas() {
-  if (intervaloAlertas) {
-    clearInterval(intervaloAlertas);
-    intervaloAlertas = null;
-  }
-
-  if (jogosComAlerta.length === 0) return;
-
-  intervaloAlertas = setInterval(() => {
-    verificarAlertasJogos();
-  }, 30000);
-}
-
-async function verificarAlertasJogos() {
-  if (jogosComAlerta.length === 0) return;
-
-  try {
-    const dataAPI = formatarDataAPI(dataSelecionada);
-    const resposta = await fetch(`/api/games?date=${dataAPI}`);
-    const dados = await resposta.json();
-    const jogosDia = dados.response || [];
-
-    const jogosMonitorizados = jogosDia.filter((jogo) => jogosComAlerta.includes(jogo.fixture.id));
-
-    for (const jogo of jogosMonitorizados) {
-      const id = jogo.fixture.id;
-
-      if (!estadoAlertasJogos[id]) {
-        estadoAlertasJogos[id] = await criarEstadoInicialAlerta(jogo);
-        continue;
-      }
-
-      const anterior = estadoAlertasJogos[id];
-      const atualStatus = jogo.fixture.status.short || "";
-      const atualHomeGoals = Number(jogo.goals.home ?? 0);
-      const atualAwayGoals = Number(jogo.goals.away ?? 0);
-
-      if (["NS", "TBD"].includes(anterior.statusShort) && isJogoLive(jogo)) {
-        mostrarToast("Início do jogo", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
-      }
-
-      if (anterior.statusShort !== "HT" && atualStatus === "HT") {
-        mostrarToast("Intervalo", `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`);
-      }
-
-      if (!["FT", "AET", "PEN"].includes(anterior.statusShort) && isJogoFinished(jogo)) {
-        mostrarToast("Fim do jogo", `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`);
-      }
-
-      const totalAnterior = Number(anterior.homeGoals) + Number(anterior.awayGoals);
-      const totalAtual = atualHomeGoals + atualAwayGoals;
-
-      if (totalAtual > totalAnterior) {
-        mostrarToast("Golo", `${jogo.teams.home.name} ${atualHomeGoals} - ${atualAwayGoals} ${jogo.teams.away.name}`);
-      }
-
-      const eventos = await obterEventosJogo(id);
-      const contagens = getContagemEventos(eventos);
-
-      if (contagens.amarelos > Number(anterior.amarelos || 0)) {
-        mostrarToast("Cartão amarelo", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
-      }
-
-      if (contagens.vermelhos > Number(anterior.vermelhos || 0)) {
-        mostrarToast("Cartão vermelho", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
-      }
-
-      if (contagens.penaltisFalhados > Number(anterior.penaltisFalhados || 0)) {
-        mostrarToast("Penálti falhado", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
-      }
-
-      if (contagens.lesoes > Number(anterior.lesoes || 0)) {
-        mostrarToast("Jogador lesionado", `${jogo.teams.home.name} x ${jogo.teams.away.name}`);
-      }
-
-      estadoAlertasJogos[id] = {
-        id,
-        homeName: jogo.teams.home.name,
-        awayName: jogo.teams.away.name,
-        homeGoals: atualHomeGoals,
-        awayGoals: atualAwayGoals,
-        statusShort: atualStatus,
-        amarelos: contagens.amarelos,
-        vermelhos: contagens.vermelhos,
-        penaltisFalhados: contagens.penaltisFalhados,
-        lesoes: contagens.lesoes
-      };
-    }
-
-    guardarEstadoAlertasJogos();
-  } catch (erro) {
-    console.error("Erro ao verificar alertas:", erro);
-  }
 }
