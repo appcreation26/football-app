@@ -521,7 +521,7 @@ async function obterJogosDemo() {
 function aplicarDataDemo(lista) {
   const dataBase = formatarDataAPI(dataSelecionada);
 
-  return lista.map((jogo, index) => {
+  return lista.map((jogo) => {
     const horaOriginal = new Date(jogo.fixture.date);
     const hora = String(horaOriginal.getUTCHours()).padStart(2, "0");
     const minuto = String(horaOriginal.getUTCMinutes()).padStart(2, "0");
@@ -530,7 +530,8 @@ function aplicarDataDemo(lista) {
       ...jogo,
       fixture: {
         ...jogo.fixture,
-        id: Number(`${dataBase.replaceAll("-", "")}${index + 1}`),
+        // 🔥 IMPORTANTE: manter ID FIXO
+        id: jogo.fixture.id,
         date: `${dataBase}T${hora}:${minuto}:00+00:00`
       }
     };
