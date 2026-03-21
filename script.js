@@ -1,4 +1,36 @@
-const MODO_DADOS = "demo"; // "demo" ou "api"
+const modeToggleBtn = document.getElementById("modeToggleBtn");
+
+function atualizarBotaoModo() {
+  if (!modeToggleBtn) return;
+
+  if (MODO_DADOS === "demo") {
+    modeToggleBtn.textContent = "Modo: DEMO";
+    modeToggleBtn.style.background = "#16c784";
+    modeToggleBtn.style.color = "#08110d";
+  } else {
+    modeToggleBtn.textContent = "Modo: API";
+    modeToggleBtn.style.background = "#ef4444";
+    modeToggleBtn.style.color = "#ffffff";
+  }
+}
+
+if (modeToggleBtn) {
+  modeToggleBtn.addEventListener("click", () => {
+    if (MODO_DADOS === "demo") {
+      const confirmar = confirm("⚠️ Isto vai usar a tua API. Continuar?");
+      if (!confirmar) return;
+      MODO_DADOS = "api";
+    } else {
+      MODO_DADOS = "demo";
+    }
+
+    localStorage.setItem("modoDados", MODO_DADOS);
+
+    atualizarBotaoModo();
+    mostrarJogos(true);
+  });
+}
+let MODO_DADOS = localStorage.getItem("modoDados") || "demo";
 
 let dataSelecionada = new Date();
 let todosOsJogos = [];
@@ -201,6 +233,7 @@ criarToastContainer();
 renderSidebar();
 atualizarLabelData();
 mostrarJogos();
+atualizarBotaoModo();
 
 /* STORAGE */
 

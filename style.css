@@ -892,3 +892,15 @@ body {
     top: 74px;
   }
 }
+#modeToggleBtn {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+#modeToggleBtn:hover {
+  transform: translateY(-1px);
+}
