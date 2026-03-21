@@ -107,6 +107,7 @@ body {
   border-radius: 16px;
   padding: 14px;
   min-height: calc(100vh - 110px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 }
 
 .panel-title {
@@ -166,6 +167,7 @@ body {
   background: #121d31;
   font-size: 13px;
   font-weight: 700;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .country-header:hover {
@@ -217,16 +219,19 @@ body {
   border: 1px solid transparent;
   font-size: 13px;
   line-height: 1.2;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 
 .league-item:hover {
   background: #16233a;
   border-color: #2d4163;
+  transform: translateY(-1px);
 }
 
 .league-item.active {
   border-color: var(--accent);
   background: var(--accent-soft);
+  box-shadow: 0 0 0 1px rgba(22, 199, 132, 0.18);
 }
 
 .league-item-content {
@@ -276,6 +281,12 @@ body {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.games-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .games-tab.active {
@@ -284,7 +295,7 @@ body {
 }
 
 .league-section {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   background: transparent;
   border: none;
   border-radius: 0;
@@ -325,7 +336,7 @@ body {
   background-size: contain;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.25s ease;
+  transition: transform 0.25s ease, opacity 0.2s ease;
 }
 
 .league-toggle-btn.is-open {
@@ -363,6 +374,7 @@ body {
   background: #ffffff;
   border-radius: 6px;
   padding: 3px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
 }
 
 .league-section-title {
@@ -379,7 +391,7 @@ body {
   grid-template-columns: 126px minmax(0, 1fr) 48px 178px 38px;
   align-items: center;
   gap: 12px;
-  padding: 0 12px 6px 12px;
+  padding: 0 12px 8px 12px;
 }
 
 .odds-header-labels {
@@ -401,18 +413,36 @@ body {
   grid-template-columns: 126px minmax(0, 1fr) 48px 178px 38px;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
-  margin-bottom: 4px;
-  border-top: 1px solid #21324b;
-  background: #061521;
+  padding: 11px 12px;
+  margin-bottom: 10px;
+  background: linear-gradient(180deg, #071724 0%, #061521 100%);
+  border: 1px solid #20324b;
+  border-radius: 12px;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .fixture-row:hover {
-  background: #0b2032;
+  background: linear-gradient(180deg, #0a2031 0%, #091d2d 100%);
+  border-color: #35527e;
+  transform: translateY(-2px);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(69, 104, 163, 0.16);
 }
 
 .fixture-row.selected {
-  background: #102942;
+  background: linear-gradient(180deg, #102942 0%, #0d2439 100%);
+  border-color: #4b72aa;
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(95, 145, 230, 0.2);
 }
 
 .fixture-left {
@@ -493,6 +523,7 @@ body {
   height: 16px;
   object-fit: contain;
   flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
 }
 
 .fixture-team-name {
@@ -508,7 +539,7 @@ body {
   flex-direction: column;
   gap: 5px;
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #ffffff;
 }
@@ -521,16 +552,23 @@ body {
 
 .odd-box {
   width: 54px;
-  height: 28px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #07131f;
   border: 1px solid #ffffff;
   color: #ffffff;
   font-size: 12px;
   font-weight: 700;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.odd-box:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22);
+  border-color: #dbeafe;
 }
 
 .odd-value {
@@ -643,10 +681,11 @@ body {
 }
 
 .details-card {
-  background: var(--panel-2);
+  background: linear-gradient(180deg, #121f37 0%, #10192d 100%);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 12px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
 }
 
 .details-title {
@@ -853,4 +892,3 @@ body {
     top: 74px;
   }
 }
-
