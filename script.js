@@ -1,36 +1,76 @@
-const modeToggleBtn = document.getElementById("modeToggleBtn");
-
-function atualizarBotaoModo() {
-  if (!modeToggleBtn) return;
-
-  if (MODO_DADOS === "demo") {
-    modeToggleBtn.textContent = "Modo: DEMO";
-    modeToggleBtn.style.background = "#16c784";
-    modeToggleBtn.style.color = "#08110d";
-  } else {
-    modeToggleBtn.textContent = "Modo: API";
-    modeToggleBtn.style.background = "#ef4444";
-    modeToggleBtn.style.color = "#ffffff";
-  }
-}
-
-if (modeToggleBtn) {
-  modeToggleBtn.addEventListener("click", () => {
-    if (MODO_DADOS === "demo") {
-      const confirmar = confirm("⚠️ Isto vai usar a tua API. Continuar?");
-      if (!confirmar) return;
-      MODO_DADOS = "api";
-    } else {
-      MODO_DADOS = "demo";
-    }
-
-    localStorage.setItem("modoDados", MODO_DADOS);
-
-    atualizarBotaoModo();
-    mostrarJogos(true);
-  });
-}
 let MODO_DADOS = localStorage.getItem("modoDados") || "demo";
+
+const DEMO_MATCHES = [
+  {
+    fixture: {
+      id: 1,
+      date: "2026-03-20T20:30:00+00:00",
+      status: { short: "NS", long: "Not Started", elapsed: null },
+      venue: { name: "Estádio do Dragão", city: "Porto" },
+      referee: "João Pinheiro"
+    },
+    league: {
+      name: "Primeira Liga",
+      country: "Portugal",
+      logo: "https://media.api-sports.io/football/leagues/94.png"
+    },
+    teams: {
+      home: { name: "FC Porto", logo: "https://media.api-sports.io/football/teams/212.png" },
+      away: { name: "Benfica", logo: "https://media.api-sports.io/football/teams/211.png" }
+    },
+    goals: { home: null, away: null },
+    score: {
+      halftime: { home: null, away: null },
+      fulltime: { home: null, away: null }
+    }
+  },
+  {
+    fixture: {
+      id: 2,
+      date: "2026-03-20T18:00:00+00:00",
+      status: { short: "1H", long: "First Half", elapsed: 32 },
+      venue: { name: "Alvalade", city: "Lisboa" },
+      referee: "Artur Soares Dias"
+    },
+    league: {
+      name: "Primeira Liga",
+      country: "Portugal",
+      logo: "https://media.api-sports.io/football/leagues/94.png"
+    },
+    teams: {
+      home: { name: "Sporting CP", logo: "https://media.api-sports.io/football/teams/228.png" },
+      away: { name: "Braga", logo: "https://media.api-sports.io/football/teams/217.png" }
+    },
+    goals: { home: 1, away: 0 },
+    score: {
+      halftime: { home: 1, away: 0 },
+      fulltime: { home: null, away: null }
+    }
+  },
+  {
+    fixture: {
+      id: 3,
+      date: "2026-03-20T15:00:00+00:00",
+      status: { short: "FT", long: "Match Finished", elapsed: 90 },
+      venue: { name: "Allianz Arena", city: "Munique" },
+      referee: "Felix Zwayer"
+    },
+    league: {
+      name: "Bundesliga",
+      country: "Germany",
+      logo: "https://media.api-sports.io/football/leagues/78.png"
+    },
+    teams: {
+      home: { name: "Bayern", logo: "https://media.api-sports.io/football/teams/157.png" },
+      away: { name: "Dortmund", logo: "https://media.api-sports.io/football/teams/165.png" }
+    },
+    goals: { home: 3, away: 2 },
+    score: {
+      halftime: { home: 2, away: 1 },
+      fulltime: { home: 3, away: 2 }
+    }
+  }
+];
 
 let dataSelecionada = new Date();
 let todosOsJogos = [];
@@ -224,6 +264,37 @@ const leagueList = document.getElementById("leagueList");
 const matchDetails = document.getElementById("matchDetails");
 const loadBtn = document.getElementById("loadBtn");
 const currentDateLabel = document.getElementById("currentDateLabel");
+const modeToggleBtn = document.getElementById("modeToggleBtn");
+
+function atualizarBotaoModo() {
+  if (!modeToggleBtn) return;
+
+  if (MODO_DADOS === "demo") {
+    modeToggleBtn.textContent = "Modo: DEMO";
+    modeToggleBtn.style.background = "#16c784";
+    modeToggleBtn.style.color = "#08110d";
+  } else {
+    modeToggleBtn.textContent = "Modo: API";
+    modeToggleBtn.style.background = "#ef4444";
+    modeToggleBtn.style.color = "#ffffff";
+  }
+}
+
+if (modeToggleBtn) {
+  modeToggleBtn.addEventListener("click", () => {
+    if (MODO_DADOS === "demo") {
+      const confirmar = confirm("⚠️ Isto vai usar a tua API. Continuar?");
+      if (!confirmar) return;
+      MODO_DADOS = "api";
+    } else {
+      MODO_DADOS = "demo";
+    }
+
+    localStorage.setItem("modoDados", MODO_DADOS);
+    atualizarBotaoModo();
+    mostrarJogos(true);
+  });
+}
 
 if (loadBtn) {
   loadBtn.addEventListener("click", () => mostrarJogos(true));
@@ -232,10 +303,8 @@ if (loadBtn) {
 criarToastContainer();
 renderSidebar();
 atualizarLabelData();
-mostrarJogos();
 atualizarBotaoModo();
-
-/* STORAGE */
+mostrarJogos();
 
 function guardarLigasFechadas() {
   localStorage.setItem("ligasFechadas", JSON.stringify(ligasFechadas));
@@ -253,13 +322,9 @@ function guardarSnapshotJogos() {
   localStorage.setItem("snapshotJogos", JSON.stringify(snapshotJogos));
 }
 
-/* CACHE */
-
 function cacheValido(entry) {
   return entry && Date.now() - entry.timestamp < CACHE_TTL_MS;
 }
-
-/* DATE */
 
 function formatarDataAPI(data) {
   const ano = data.getFullYear();
@@ -328,8 +393,6 @@ function irHoje() {
   mostrarJogos(true);
 }
 
-/* FAVORITAS */
-
 function getLeagueKey(country, display) {
   return `${country}|||${display}`;
 }
@@ -372,8 +435,6 @@ function toggleJogoFavorito(idJogo) {
   guardarJogosFavoritos();
   renderJogos();
 }
-
-/* ALERTAS MANUAIS */
 
 function criarSnapshotJogo(jogo) {
   return {
@@ -456,8 +517,6 @@ async function toggleAlertaJogo(jogo) {
 
   renderJogos();
 }
-
-/* LEAGUES */
 
 function toggleLigaFechada(key) {
   if (ligasFechadas.includes(key)) {
@@ -543,12 +602,8 @@ function filtrarPorTab(jogos) {
   return jogos;
 }
 
-/* DADOS */
-
 async function obterJogosDemo() {
-  const modulo = await import("./demo/matches.js");
-  const lista = Array.isArray(modulo.demoMatches) ? modulo.demoMatches : [];
-  return JSON.parse(JSON.stringify(lista));
+  return JSON.parse(JSON.stringify(DEMO_MATCHES));
 }
 
 function aplicarDataDemo(lista) {
@@ -563,7 +618,6 @@ function aplicarDataDemo(lista) {
       ...jogo,
       fixture: {
         ...jogo.fixture,
-        // 🔥 IMPORTANTE: manter ID FIXO
         id: jogo.fixture.id,
         date: `${dataBase}T${hora}:${minuto}:00+00:00`
       }
@@ -624,8 +678,6 @@ async function mostrarJogos(force = false) {
     }
   }
 }
-
-/* SIDEBAR */
 
 function renderSidebar() {
   if (!leagueList) return;
@@ -752,15 +804,13 @@ function criarLeagueItem(country, display) {
   return item;
 }
 
-/* STATUS */
-
 function traduzirEstado(statusShort, statusLong) {
   const mapa = {
     NS: "Por começar",
     TBD: "Por definir",
     FT: "Terminado",
-    AET: "Após prolongamento",
-    PEN: "Penáltis",
+    AET: "Após-Prolongamento",
+    PEN: "Após-Penáltis",
     PST: "Adiado",
     CANC: "Cancelado",
     ABD: "Abandonado",
@@ -793,10 +843,14 @@ function getTextoEstadoLinhaHtml(jogo) {
   }
 
   if (status === "AET") {
-    return `Após<br>prolongamento`;
+    return "Após-Prolongamento";
   }
 
-  if (["FT", "PEN", "PST", "CANC", "ABD", "AWD", "WO", "INT", "SUSP"].includes(status)) {
+  if (status === "PEN") {
+    return "Após-Penáltis";
+  }
+
+  if (["FT", "PST", "CANC", "ABD", "AWD", "WO", "INT", "SUSP"].includes(status)) {
     return traduzirEstado(status, statusLong);
   }
 
@@ -811,8 +865,6 @@ function renderLiveIcon(jogo) {
   if (!isJogoLive(jogo)) return "";
   return `<span class="fixture-live-icon" title="Jogo em direto" aria-hidden="true"></span>`;
 }
-
-/* ODDS LOCAIS */
 
 function renderOddCell(value) {
   return `
@@ -862,8 +914,6 @@ function renderOddsHeader() {
     </div>
   `;
 }
-
-/* GAMES */
 
 function agruparJogosPorLiga(jogos) {
   const grupos = {};
@@ -1064,8 +1114,6 @@ function renderTabs() {
   gamesContainer.appendChild(tabs);
 }
 
-/* DETAILS - SEM API EXTRA */
-
 function renderDetalhes(jogo) {
   if (!matchDetails) return;
 
@@ -1126,8 +1174,6 @@ function renderDetalhes(jogo) {
     </div>
   `;
 }
-
-/* TOASTS */
 
 function criarToastContainer() {
   if (document.getElementById("toastContainer")) return;
