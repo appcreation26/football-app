@@ -12,7 +12,8 @@ const DEMO_MATCHES = [
     league: {
       name: "Primeira Liga",
       country: "Portugal",
-      logo: "https://media.api-sports.io/football/leagues/94.png"
+      logo: "https://media.api-sports.io/football/leagues/94.png",
+      round: "Regular Season - 27"
     },
     teams: {
       home: { name: "FC Porto", logo: "https://media.api-sports.io/football/teams/212.png" },
@@ -35,7 +36,8 @@ const DEMO_MATCHES = [
     league: {
       name: "Primeira Liga",
       country: "Portugal",
-      logo: "https://media.api-sports.io/football/leagues/94.png"
+      logo: "https://media.api-sports.io/football/leagues/94.png",
+      round: "Regular Season - 27"
     },
     teams: {
       home: { name: "Sporting CP", logo: "https://media.api-sports.io/football/teams/228.png" },
@@ -58,7 +60,8 @@ const DEMO_MATCHES = [
     league: {
       name: "Bundesliga",
       country: "Germany",
-      logo: "https://media.api-sports.io/football/leagues/78.png"
+      logo: "https://media.api-sports.io/football/leagues/78.png",
+      round: "Regular Season - 27"
     },
     teams: {
       home: { name: "Bayern", logo: "https://media.api-sports.io/football/teams/157.png" },
@@ -68,6 +71,54 @@ const DEMO_MATCHES = [
     score: {
       halftime: { home: 2, away: 1 },
       fulltime: { home: 3, away: 2 }
+    }
+  },
+  {
+    fixture: {
+      id: 4,
+      date: "2026-03-20T13:00:00+00:00",
+      status: { short: "AET", long: "After Extra Time", elapsed: 120 },
+      venue: { name: "Stadio Olimpico", city: "Roma" },
+      referee: "Daniele Orsato"
+    },
+    league: {
+      name: "Serie A",
+      country: "Italy",
+      logo: "https://media.api-sports.io/football/leagues/135.png",
+      round: "Regular Season - 29"
+    },
+    teams: {
+      home: { name: "Roma", logo: "https://media.api-sports.io/football/teams/497.png" },
+      away: { name: "Lazio", logo: "https://media.api-sports.io/football/teams/487.png" }
+    },
+    goals: { home: 2, away: 1 },
+    score: {
+      halftime: { home: 0, away: 0 },
+      fulltime: { home: 1, away: 1 }
+    }
+  },
+  {
+    fixture: {
+      id: 5,
+      date: "2026-03-20T11:00:00+00:00",
+      status: { short: "PEN", long: "Penalty Shootout", elapsed: 120 },
+      venue: { name: "Parc des Princes", city: "Paris" },
+      referee: "Clément Turpin"
+    },
+    league: {
+      name: "Ligue 1",
+      country: "France",
+      logo: "https://media.api-sports.io/football/leagues/61.png",
+      round: "Regular Season - 26"
+    },
+    teams: {
+      home: { name: "Paris Saint Germain", logo: "https://media.api-sports.io/football/teams/85.png" },
+      away: { name: "Marseille", logo: "https://media.api-sports.io/football/teams/81.png" }
+    },
+    goals: { home: 1, away: 1 },
+    score: {
+      halftime: { home: 0, away: 1 },
+      fulltime: { home: 1, away: 1 }
     }
   }
 ];
@@ -625,6 +676,13 @@ function aplicarDataDemo(lista) {
   });
 }
 
+function getLeagueRoundText(jogo) {
+  const roundRaw = jogo.league?.round || "";
+  const digits = String(roundRaw).match(/\d+/);
+  const roundNumber = digits ? digits[0] : "?";
+  return `Ronda ${roundNumber}`;
+}
+
 async function mostrarJogos(force = false) {
   if (gamesContainer) {
     gamesContainer.innerHTML = `<p class="muted">🔄 A carregar jogos...</p>`;
@@ -806,9 +864,9 @@ function criarLeagueItem(country, display) {
 
 function traduzirEstado(statusShort, statusLong) {
   const mapa = {
-    NS: "Por começar",
+    NS: formatarHora,
     TBD: "Por definir",
-    FT: "Terminado",
+    FT: "FT",
     AET: "Após-Prolongamento",
     PEN: "Após-Penáltis",
     PST: "Adiado",
@@ -825,8 +883,8 @@ function traduzirEstado(statusShort, statusLong) {
     P: "Penáltis"
   };
 
-  if (mapa[statusShort]) return mapa[statusShort];
-  return statusLong || statusShort || "-";
+  if (statusShort === "NS") return null;
+  return mapa[statusShort] || statusLong || "-";
 }
 
 function getTextoEstadoLinhaHtml(jogo) {
@@ -838,7 +896,7 @@ function getTextoEstadoLinhaHtml(jogo) {
     return minuto ? `${minuto}'` : traduzirEstado(status, statusLong);
   }
 
-  if (["NS", "TBD"].includes(status)) {
+  if (status === "NS") {
     return formatarHora(jogo.fixture.date);
   }
 
@@ -850,36 +908,35 @@ function getTextoEstadoLinhaHtml(jogo) {
     return "Após-Penáltis";
   }
 
-  if (["FT", "PST", "CANC", "ABD", "AWD", "WO", "INT", "SUSP"].includes(status)) {
-    return traduzirEstado(status, statusLong);
-  }
-
-  if (minuto && Number(minuto) > 0) {
-    return `${minuto}'`;
-  }
-
   return traduzirEstado(status, statusLong);
 }
 
-function renderLiveIcon(jogo) {
-  if (!isJogoLive(jogo)) return "";
-  return `<span class="fixture-live-icon" title="Jogo em direto" aria-hidden="true"></span>`;
-}
-
-function renderOddCell(value) {
+function renderOddCell(value, active = false) {
   return `
-    <div class="odd-box">
+    <div class="odd-box ${active ? "odd-box-active" : ""}">
       <span class="odd-value">${value}</span>
     </div>
   `;
 }
 
-function renderOdds() {
+function renderOdds(jogo) {
+  const home = "-";
+  const draw = "-";
+  const away = "-";
+
   return `
-    <div class="fixture-odds">
-      ${renderOddCell("-")}
-      ${renderOddCell("-")}
-      ${renderOddCell("-")}
+    <div class="fixture-palpites-box">
+      <div class="fixture-palpites-title">Palpites</div>
+      <div class="fixture-odds-headings">
+        <span>CASA</span>
+        <span>X</span>
+        <span>FORA</span>
+      </div>
+      <div class="fixture-odds">
+        ${renderOddCell(home)}
+        ${renderOddCell(draw)}
+        ${renderOddCell(away)}
+      </div>
     </div>
   `;
 }
@@ -899,22 +956,6 @@ function renderBellButton(jogo) {
   `;
 }
 
-function renderOddsHeader() {
-  return `
-    <div class="odds-header-row">
-      <div></div>
-      <div></div>
-      <div></div>
-      <div class="odds-header-labels">
-        <span>1</span>
-        <span>X</span>
-        <span>2</span>
-      </div>
-      <div></div>
-    </div>
-  `;
-}
-
 function agruparJogosPorLiga(jogos) {
   const grupos = {};
 
@@ -928,6 +969,7 @@ function agruparJogosPorLiga(jogos) {
         country: ligaInfo.country,
         liga: ligaInfo.display,
         logo: jogo.league.logo,
+        round: getLeagueRoundText(jogo),
         jogos: []
       };
     }
@@ -963,22 +1005,27 @@ function renderJogos() {
     bloco.jogos.sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date));
 
     const section = document.createElement("div");
-    section.className = "league-section";
+    section.className = "league-section league-section-soft";
 
     const header = document.createElement("div");
-    header.className = "league-section-header";
+    header.className = "league-section-header league-section-header-light";
 
     const headerKey = getLeagueKey(bloco.country, bloco.liga);
     const headerFavorita = favoritas.includes(headerKey) ? "★" : "☆";
     const estaFechada = ligasFechadas.includes(headerKey);
 
     header.innerHTML = `
-      <div class="league-section-left">
-        <button class="league-header-favorite" type="button">${headerFavorita}</button>
-        ${bloco.logo ? `<img src="${bloco.logo}" class="league-section-logo" alt="${bloco.liga}">` : ""}
-        <span class="league-section-title">${bloco.grupo} ${bloco.liga}</span>
+      <div class="league-header-layout">
+        <div class="league-header-main">
+          <button class="league-header-favorite" type="button">${headerFavorita}</button>
+          <div class="league-logo-circle">
+            <img src="${bloco.logo}" alt="${bloco.liga}">
+          </div>
+          <div class="league-section-title-light">${bloco.grupo} / ${bloco.liga} - ${bloco.round}</div>
+        </div>
+
+        <button class="league-toggle-btn ${estaFechada ? "is-closed" : "is-open"}" type="button" aria-label="Abrir ou fechar jogos"></button>
       </div>
-      <button class="league-toggle-btn ${estaFechada ? "is-closed" : "is-open"}" type="button" aria-label="Abrir ou fechar jogos"></button>
     `;
 
     header.addEventListener("click", () => {
@@ -998,43 +1045,50 @@ function renderJogos() {
     section.appendChild(header);
 
     if (!estaFechada) {
-      section.insertAdjacentHTML("beforeend", renderOddsHeader());
-
-      bloco.jogos.forEach((jogo) => {
+      bloco.jogos.forEach((jogo, index) => {
         const row = document.createElement("div");
-        row.className = "fixture-row";
+        row.className = "fixture-row fixture-row-light";
 
         if (jogoSelecionadoId === jogo.fixture.id) {
           row.classList.add("selected");
         }
 
+        if (index !== bloco.jogos.length - 1) {
+          row.classList.add("fixture-row-divider");
+        }
+
         const jogoFavorito = jogosFavoritos.includes(jogo.fixture.id) ? "★" : "☆";
 
         row.innerHTML = `
-          <div class="fixture-left">
-            <button class="fixture-favorite-btn" type="button">${jogoFavorito}</button>
-            ${renderLiveIcon(jogo)}
-            <div class="fixture-status">${getTextoEstadoLinhaHtml(jogo)}</div>
-          </div>
-
-          <div class="fixture-teams">
-            <div class="fixture-team-line">
-              <img src="${jogo.teams.home.logo}" class="fixture-team-logo" alt="${jogo.teams.home.name}">
-              <span class="fixture-team-name">${jogo.teams.home.name}</span>
+          <div class="fixture-left-column">
+            <div class="fixture-icons-top">
+              <button class="fixture-favorite-btn" type="button">${jogoFavorito}</button>
+              ${renderBellButton(jogo)}
             </div>
-            <div class="fixture-team-line">
-              <img src="${jogo.teams.away.logo}" class="fixture-team-logo" alt="${jogo.teams.away.name}">
-              <span class="fixture-team-name">${jogo.teams.away.name}</span>
+            <div class="fixture-status fixture-status-light">${getTextoEstadoLinhaHtml(jogo)}</div>
+          </div>
+
+          <div class="fixture-center-column">
+            <div class="fixture-teams fixture-teams-light">
+              <div class="fixture-team-line">
+                <img src="${jogo.teams.home.logo}" class="fixture-team-logo" alt="${jogo.teams.home.name}">
+                <span class="fixture-team-name">${jogo.teams.home.name}</span>
+              </div>
+              <div class="fixture-team-line">
+                <img src="${jogo.teams.away.logo}" class="fixture-team-logo" alt="${jogo.teams.away.name}">
+                <span class="fixture-team-name fixture-team-name-secondary">${jogo.teams.away.name}</span>
+              </div>
+            </div>
+
+            <div class="fixture-scores fixture-scores-light">
+              <div>${jogo.goals.home ?? "-"}</div>
+              <div>${jogo.goals.away ?? "-"}</div>
             </div>
           </div>
 
-          <div class="fixture-scores">
-            <div>${jogo.goals.home ?? "-"}</div>
-            <div>${jogo.goals.away ?? "-"}</div>
+          <div class="fixture-right-column">
+            ${renderOdds(jogo)}
           </div>
-
-          ${renderOdds()}
-          ${renderBellButton(jogo)}
         `;
 
         row.addEventListener("click", () => {
@@ -1156,20 +1210,6 @@ function renderDetalhes(jogo) {
       <div class="details-meta">
         <div>Estádio: ${estadio}</div>
         <div>Cidade: ${cidade}</div>
-      </div>
-    </div>
-
-    <div class="details-card">
-      <div class="details-title">Resultado ao intervalo</div>
-      <div class="details-meta">
-        <div>${jogo.score?.halftime?.home ?? "-"} - ${jogo.score?.halftime?.away ?? "-"}</div>
-      </div>
-    </div>
-
-    <div class="details-card">
-      <div class="details-title">Resultado final</div>
-      <div class="details-meta">
-        <div>${jogo.score?.fulltime?.home ?? "-"} - ${jogo.score?.fulltime?.away ?? "-"}</div>
       </div>
     </div>
   `;
