@@ -5,20 +5,14 @@
 :root {
   --bg: #081120;
   --panel: #0e1a30;
-  --panel-2: #101d35;
   --border: #243453;
   --text: #f8fafc;
   --muted: #94a3b8;
   --accent: #16c784;
   --accent-soft: #143323;
-  --tab-bg: #18263f;
-  --tab-active-light: #f3f4f6;
-  --tab-active-dark: #111827;
   --middle-soft-bg: #e6ebf2;
   --middle-card-bg: #f7f9fc;
-  --middle-line: #d9e0ea;
   --middle-text: #243b63;
-  --middle-muted: #8ea0bb;
 }
 
 body {
@@ -277,19 +271,58 @@ body {
   flex: 1;
 }
 
-.favorite-btn {
-  background: transparent;
+/* ESTRELA MAIS ARREDONDADA */
+
+.icon-favorite-btn {
+  width: 22px;
+  height: 22px;
   border: none;
-  color: #facc15;
+  background: transparent;
+  padding: 0;
   cursor: pointer;
-  font-size: 20px;
-  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  line-height: 1;
 }
 
-.favorite-btn:hover {
-  transform: scale(1.08);
+.icon-favorite-shape {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.2l2.2 4.55 5 .72-3.6 3.5.85 4.95L12 15.1 7.55 17.92l.85-4.95-3.6-3.5 5-.72L12 3.2z' fill='none' stroke='%23b6c4d8' stroke-width='1.85' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.icon-favorite-btn.active .icon-favorite-shape {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.2l2.2 4.55 5 .72-3.6 3.5.85 4.95L12 15.1 7.55 17.92l.85-4.95-3.6-3.5 5-.72L12 3.2z' fill='%23b6c4d8' stroke='%23b6c4d8' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.sidebar-favorite .icon-favorite-shape {
+  width: 19px;
+  height: 19px;
+}
+
+.header-favorite {
+  width: 26px;
+  height: 26px;
+}
+
+.header-favorite .icon-favorite-shape {
+  width: 24px;
+  height: 24px;
+}
+
+.match-favorite {
+  width: 22px;
+  height: 22px;
+}
+
+.match-favorite .icon-favorite-shape {
+  width: 20px;
+  height: 20px;
 }
 
 /* CENTER */
@@ -359,21 +392,6 @@ body {
   min-width: 0;
 }
 
-.league-header-favorite {
-  background: transparent;
-  border: none;
-  color: #9fb1c8;
-  cursor: pointer;
-  font-size: 20px;
-  padding: 0;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.league-header-favorite:hover {
-  color: #facc15;
-}
-
 .league-logo-circle {
   width: 38px;
   height: 38px;
@@ -428,15 +446,17 @@ body {
   opacity: 0.85;
 }
 
+/* BARRA DE JOGOS MAIS PROPORCIONAL */
+
 .fixture-row-light {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr) 320px;
-  gap: 18px;
+  grid-template-columns: 78px minmax(0, 1fr) 230px;
+  gap: 14px;
   align-items: center;
   background: var(--middle-card-bg);
   border: 1px solid #dde5ee;
   border-radius: 18px;
-  padding: 16px 18px;
+  padding: 16px 14px;
   margin-bottom: 12px;
 }
 
@@ -447,8 +467,8 @@ body {
 .fixture-row-divider::after {
   content: "";
   position: absolute;
-  left: 12px;
-  right: 12px;
+  left: 14px;
+  right: 14px;
   bottom: -7px;
   border-bottom: 1px dashed #d4dce7;
 }
@@ -457,86 +477,73 @@ body {
   box-shadow: 0 0 0 2px rgba(79, 122, 189, 0.18);
 }
 
+/* COLUNA ESQUERDA */
+
 .fixture-left-column {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .fixture-icons-top {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 7px;
+  width: 100%;
+  padding-left: 0;
+  margin-left: -2px;
 }
 
-.fixture-favorite-btn {
-  background: transparent;
-  border: none;
-  color: #b6c4d8;
-  cursor: pointer;
-  font-size: 18px;
-  padding: 0;
-  line-height: 1;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
+.fixture-time-row {
+  display: grid;
+  grid-template-columns: 20px 20px;
+  column-gap: 7px;
+  width: 47px;
+  align-items: center;
+  justify-items: center;
 }
 
-.fixture-favorite-btn:hover {
-  color: #facc15;
-}
-
-.fixture-bell-btn {
-  width: 18px;
-  height: 18px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 0;
+.fixture-time-col {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.fixture-bell-btn:hover {
-  transform: scale(1.06);
+.fixture-time-text {
+  color: #8598b7;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
 }
 
-.fixture-bell-icon {
+.fixture-clock-icon {
   width: 18px;
   height: 18px;
   display: inline-block;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.5c-2.4 0-4 1.7-4 4.5v1.6c0 .9-.2 1.8-.7 2.5l-1.2 1.8c-.4.6 0 1.6.8 1.6h10.2c.8 0 1.2-1 .8-1.6l-1.2-1.8c-.5-.7-.7-1.6-.7-2.5V8c0-2.8-1.6-4.5-4-4.5Z' fill='none' stroke='%23b6c4d8' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.5 18.2a1.5 1.5 0 0 0 3 0' fill='none' stroke='%23b6c4d8' stroke-width='1.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%238093b1' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='32' cy='36' r='20'/%3E%3Cpath d='M32 16V8'/%3E%3Cpath d='M24 8h16'/%3E%3Cpath d='M32 36l8-8'/%3E%3Cpath d='M18 18l-4 4'/%3E%3Cpath d='M46 18l4 4'/%3E%3C/g%3E%3C/svg%3E");
 }
 
-.fixture-bell-btn.active .fixture-bell-icon {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.5c-2.4 0-4 1.7-4 4.5v1.6c0 .9-.2 1.8-.7 2.5l-1.2 1.8c-.4.6 0 1.6.8 1.6h10.2c.8 0 1.2-1 .8-1.6l-1.2-1.8c-.5-.7-.7-1.6-.7-2.5V8c0-2.8-1.6-4.5-4-4.5Z' fill='%2394a3b8' stroke='%2394a3b8' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.5 18.2a1.5 1.5 0 0 0 3 0' fill='none' stroke='%23ffffff' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E");
-}
-
-.fixture-status-light {
-  width: 100%;
-  text-align: center;
-  color: #8598b7;
-  font-size: 16px;
-  font-weight: 500;
-}
+/* COLUNA CENTRAL */
 
 .fixture-center-column {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 46px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  gap: 12px;
   align-items: center;
 }
 
 .fixture-teams-light {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+  min-width: 0;
 }
 
 .fixture-team-line {
@@ -547,8 +554,8 @@ body {
 }
 
 .fixture-team-logo {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -557,7 +564,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #243b63;
 }
@@ -570,29 +577,32 @@ body {
 .fixture-scores-light {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   text-align: center;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: #2a4166;
 }
 
+/* PALPITES MAIS PEQUENOS */
+
 .fixture-right-column {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .fixture-palpites-box {
   width: 100%;
-  max-width: 290px;
+  max-width: 218px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 7px;
 }
 
 .fixture-palpites-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: #243b63;
   border-bottom: 2px solid #50a0ff;
@@ -602,46 +612,72 @@ body {
 .fixture-odds-headings {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 7px;
   width: 100%;
 }
 
 .fixture-odds-headings span {
   text-align: center;
   color: #334967;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
 }
 
 .fixture-odds {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 7px;
   width: 100%;
 }
 
 .odd-box {
   min-width: 0;
-  height: 64px;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: 13px;
   background: #f4f6fa;
   border: 1px solid #d5dde8;
   color: #96a5ba;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
-}
-
-.odd-box-active {
-  background: #eef8f1;
-  border: 2px solid #62c788;
-  color: #1f3a63;
 }
 
 .odd-value {
   color: inherit;
+}
+
+/* SINO MESMO TAMANHO DA ESTRELA */
+
+.fixture-bell-btn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fixture-bell-btn:hover {
+  transform: scale(1.04);
+}
+
+.fixture-bell-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.4c-2.35 0-3.95 1.67-3.95 4.45v1.58c0 .9-.23 1.78-.7 2.5l-1.1 1.7c-.42.63.02 1.53.8 1.53h10.9c.78 0 1.22-.9.8-1.53l-1.1-1.7c-.47-.72-.7-1.6-.7-2.5V7.85c0-2.78-1.6-4.45-3.95-4.45Z' fill='none' stroke='%23b6c4d8' stroke-width='1.9' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.4 18.15c.28.92.97 1.45 1.6 1.45s1.32-.53 1.6-1.45' fill='none' stroke='%23b6c4d8' stroke-width='1.9' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='19.1' r='0.55' fill='%23b6c4d8'/%3E%3C/svg%3E");
+}
+
+.fixture-bell-btn.active .fixture-bell-icon {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.4c-2.35 0-3.95 1.67-3.95 4.45v1.58c0 .9-.23 1.78-.7 2.5l-1.1 1.7c-.42.63.02 1.53.8 1.53h10.9c.78 0 1.22-.9.8-1.53l-1.1-1.7c-.47-.72-.7-1.6-.7-2.5V7.85c0-2.78-1.6-4.45-3.95-4.45Z' fill='%23b6c4d8' stroke='%23b6c4d8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.4 18.15c.28.92.97 1.45 1.6 1.45s1.32-.53 1.6-1.45' fill='none' stroke='%23ffffff' stroke-width='1.15' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='19.1' r='0.55' fill='%23b6c4d8'/%3E%3C/svg%3E");
 }
 
 /* RIGHT */
@@ -754,7 +790,7 @@ body {
   }
 
   .fixture-row-light {
-    grid-template-columns: 110px minmax(0, 1fr) 280px;
+    grid-template-columns: 80px minmax(0, 1fr) 214px;
   }
 }
 
